@@ -39,10 +39,12 @@ export interface MapScreenProps {
 }
 
 export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
+  const { navigation } = props
   const [markers, setMarkers] = useState([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isViewRecord, setIsViewRecord] = useState(false)
+  const [selectedWell, setSelectedWell] = useState('')
 
   const getWells = async (wellUrl) => {
     const source = CancelToken.source()
@@ -64,7 +66,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       next: data => {
         if (data) {
           const _markers = []
-          console.log("WELLS FETCHED")
+          setIsViewRecord(false)
           data.features.forEach((data) => {
             _markers.push({
               coordinate: {
@@ -75,7 +77,6 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
               key: data.id
             })
           })
-          console.log(_markers)
           setMarkers(_markers)
         }
       }
@@ -87,11 +88,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const markerSelected = (marker) => {
+    setSelectedWell(marker.title)
     setIsViewRecord(true)
+    console.log('selectedWell', selectedWell)
   }
 
   const markerDeselected = () => {
-    console.log('marker')
     setIsViewRecord(false)
   }
 
@@ -107,14 +109,16 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const addNewWell = () => {
   }
 
-  const viewRecord = () => {
-  }
+  const viewRecord = React.useMemo(() => () => {
+    return props.navigation.navigate("form", { wellName: selectedWell }), [
+      props.navigation,
+    ]
+  })
 
   const submitSearch = () => {
     setIsLoading(true)
     const searchUrl = `${WELL_BASE_URL}&CQL_FILTER=(strToLowerCase(%22original_id%22)%20LIKE%20%27%25${search.toLowerCase()}%25%27)`
     getWells(searchUrl)
-    setIsViewRecord(false)
   }
 
   const onClearSearch = async() => {
