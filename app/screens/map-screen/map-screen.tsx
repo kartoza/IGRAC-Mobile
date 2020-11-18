@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
-import { SearchBar, ListItem, Button, Header, Icon } from 'react-native-elements'
-import { View, Image, ViewStyle, TextStyle, ImageStyle, SafeAreaView, Platform } from "react-native"
+import { SearchBar, Button, Icon } from 'react-native-elements'
+import { View, ViewStyle, Text, ActivityIndicator, Modal, Platform, TextStyle } from "react-native"
 import MapView, { Marker } from "react-native-maps"
 import { CancelToken } from "apisauce"
 import Axios from "axios"
 import {
   Observable
 } from "rxjs"
-import Geolocation from "@react-native-community/geolocation"
+import { load, save } from "../../utils/storage"
+const { API_URL } = require("../../config/env")
 
-const CONTAINER: ViewStyle = {
-  height: "100%"
+const ACTIVITY_INDICATOR: ViewStyle = {
+  top: 10,
 }
-const MAP: ViewStyle = {
-  height: "100%",
-  marginVertical: 0,
+const ACTIVITY_INDICATOR_WRAPPER: ViewStyle = {
+  alignItems: "center",
+  backgroundColor: "#FFFFFF",
+  borderRadius: 10,
+  display: "flex",
+  height: 140,
+  justifyContent: "space-around",
+  width: 140,
 }
 const BOTTOM_VIEW: ViewStyle = {
   alignItems: "center",
@@ -29,10 +35,29 @@ const BOTTOM_VIEW: ViewStyle = {
   position: "absolute",
   width: "100%",
 }
+const CONTAINER: ViewStyle = {
+  height: "100%"
+}
+const MAP: ViewStyle = {
+  height: "100%",
+  marginVertical: 0,
+}
+const MODAL_TEXT: TextStyle = {
+  fontSize: 14,
+  textAlign: "center"
+}
+const MODAL_BACKGROUND: ViewStyle = {
+  alignItems: "center",
+  backgroundColor: "#00000040",
+  flex: 1,
+  flexDirection: "column",
+  justifyContent: "space-around"
+}
 
-let _mapView = null
+let mapViewRef = null
 let SUBS = null
-const WELL_BASE_URL = 'https://staging.igrac.kartoza.com/geoserver/groundwater/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=groundwater:Groundwater_Well&maxFeatures=50&outputFormat=application%2Fjson&viewparams=uuid:68bd8b0e-cd05-493b-9590-f00a0d677cfa'
+const WELL_BASE_URL = `${API_URL}/geoserver/groundwater/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=groundwater:Groundwater_Well&maxFeatures=50&outputFormat=application%2Fjson&viewparams=uuid:68bd8b0e-cd05-493b-9590-f00a0d677cfa`
+const WELL_DATA_URL = `${API_URL}/groundwater/api/well/minimized/`
 
 export interface MapScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>
@@ -40,21 +65,52 @@ export interface MapScreenProps {
 
 export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const { navigation } = props
+  const [wells, setWells] = useState([])
   const [markers, setMarkers] = useState([])
   const [search, setSearch] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [isViewRecord, setIsViewRecord] = useState(false)
   const [selectedWell, setSelectedWell] = useState('')
+
+  const renderWells = (data) => {
+    const _markers = []
+    data.forEach((data) => {
+      _markers.push({
+        coordinate: {
+          latitude: data.loc[0],
+          longitude: data.loc[1]
+        },
+        title: data.id,
+        key: data.id
+      })
+    })
+    setMarkers(_markers)
+  }
 
   const getWells = async (wellUrl) => {
     const source = CancelToken.source()
     setTimeout(() => {
       source.cancel()
     }, 10 * 1000)
-    console.log(wellUrl)
+
+    const uuid = await load("uuid")
+    const well = await load("well")
+
+    if (well) {
+      renderWells(well)
+      setIsViewRecord(false)
+      setIsLoading(false)
+      setWells(well)
+      return
+    }
 
     const observable$ = Observable.create(observer => {
-      Axios.get(`${wellUrl}`, { cancelToken: source.token })
+      Axios.get(`${wellUrl}`, {
+        cancelToken: source.token,
+        headers: {
+          Authorization: `Token ${uuid}`
+        }
+      })
         .then(response => {
           observer.next(response.data)
           observer.complete()
@@ -63,21 +119,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         })
     })
     SUBS = await observable$.subscribe({
-      next: data => {
+      next: async data => {
         if (data) {
-          const _markers = []
+          setWells(data)
+          await save('well', well)
+          await renderWells(data)
           setIsViewRecord(false)
-          data.features.forEach((data) => {
-            _markers.push({
-              coordinate: {
-                latitude: data.geometry.coordinates[1],
-                longitude: data.geometry.coordinates[0]
-              },
-              title: data.properties.original_id,
-              key: data.id
-            })
-          })
-          setMarkers(_markers)
+          setIsLoading(false)
         }
       }
     })
@@ -90,7 +138,6 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const markerSelected = (marker) => {
     setSelectedWell(marker.title)
     setIsViewRecord(true)
-    console.log('selectedWell', selectedWell)
   }
 
   const markerDeselected = () => {
@@ -107,6 +154,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const addNewWell = () => {
+    //
   }
 
   const viewRecord = React.useMemo(() => () => {
@@ -117,12 +165,18 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const submitSearch = () => {
     setIsLoading(true)
-    const searchUrl = `${WELL_BASE_URL}&CQL_FILTER=(strToLowerCase(%22original_id%22)%20LIKE%20%27%25${search.toLowerCase()}%25%27)`
-    getWells(searchUrl)
+    const results = []
+    wells.forEach((data) => {
+      if (data.id.toLowerCase().includes(search.toLowerCase())) {
+        results.push(data)
+      }
+    })
+    renderWells(results)
+    setIsLoading(false)
   }
 
   const onClearSearch = async() => {
-    getWells(WELL_BASE_URL)
+    getWells(WELL_DATA_URL)
   }
 
   const buttonSpace = () => {
@@ -132,8 +186,14 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   useEffect(() => {
+    navigation.addListener('beforeRemove', (e) => {
+      // e.preventDefault()
+    })
+  }, [navigation])
+
+  useEffect(() => {
     ;(async () => {
-      getWells(WELL_BASE_URL)
+      getWells(WELL_DATA_URL)
     })()
     return function cleanup() {
       if (SUBS) {
@@ -162,7 +222,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           longitude: 146.6129632294178,
           longitudeDelta: 3.703794702887535
         }}
-        ref = {(mapView) => { _mapView = mapView }}
+        ref = {(mapView) => { mapViewRef = mapView }}
         onRegionChange={ onRegionChange }
         style={ MAP }
         loadingEnabled={true}
@@ -183,6 +243,21 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           )
         })}
       </MapView>
+
+      <Modal
+        transparent={true}
+        animationType={"none"}
+        visible={ isLoading }
+        onRequestClose={() => { setIsLoading(false) }}>
+        <View style={ MODAL_BACKGROUND }>
+          <View style={ ACTIVITY_INDICATOR_WRAPPER }>
+            <ActivityIndicator
+              animating={ isLoading } size="large" color="#ff8000" style={ ACTIVITY_INDICATOR } />
+            <Text style={ MODAL_TEXT }>Loading...</Text>
+          </View>
+        </View>
+      </Modal>
+
       { isViewRecord ? ( // Refresh map
         (() => {
           return (
