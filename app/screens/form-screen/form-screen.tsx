@@ -8,7 +8,6 @@ import { Header } from "react-native-elements"
 import { load } from "../../utils/storage"
 import { styles } from "../form-screen/styles"
 
-
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
 }
@@ -40,47 +39,27 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
         })
       }
       if (_wellData) {
-        const _glmCharts = {}
-        const _gqCharts = {}
-        const _gyCharts = {}
-        _wellData.lm.reverse().forEach(element => {
-          const dateTime = new Date(element.dt * 1000)
-          if (!_glmCharts[element.par]) {
-            _glmCharts[element.par] = {
-              data: [],
-              labels: []
+        const _chartData = {
+          lm: {}, // Groundwater Level Measurement charts
+          qm: {}, // Groundwater Quality charts
+          ym: {} // Yield Measurement charts
+        }
+        for (const chartType in _chartData) {
+          _wellData[chartType].reverse().forEach(element => {
+            const dateTime = new Date(element.dt * 1000)
+            if (!_chartData[chartType][element.par]) {
+              _chartData[chartType][element.par] = {
+                data: [],
+                labels: []
+              }
             }
-          }
-          _glmCharts[element.par].data.push({ y: parseFloat(element.v) })
-          _glmCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-        })
-        setGlmCharts(_glmCharts)
-
-        _wellData.qm.reverse().forEach(element => {
-          const dateTime = new Date(element.dt * 1000)
-          if (!_gqCharts[element.par]) {
-            _gqCharts[element.par] = {
-              data: [],
-              labels: []
-            }
-          }
-          _gqCharts[element.par].data.push({ y: parseFloat(element.v) })
-          _gqCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-        })
-        setGqCharts(_gqCharts)
-
-        _wellData.ym.reverse().forEach(element => {
-          const dateTime = new Date(element.dt * 1000)
-          if (!_gyCharts[element.par]) {
-            _gyCharts[element.par] = {
-              data: [],
-              labels: []
-            }
-          }
-          _gyCharts[element.par].data.push({ y: parseFloat(element.v) })
-          _gyCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-        })
-        setGyCharts(_gyCharts)
+            _chartData[chartType][element.par].data.push({ y: parseFloat(element.v) })
+            _chartData[chartType][element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
+          })
+        }
+        setGlmCharts(_chartData.lm)
+        setGqCharts(_chartData.qm)
+        setGyCharts(_chartData.ym)
       }
     })()
   }, [])
@@ -155,7 +134,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             </View>
           )}
         </Formik>
-        <View style={ styles.CHART_CONTAINER }>
+        <View style={ Object.keys(glmCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER LEVEL</Text>
           {
             Object.keys(glmCharts).map(r => <LineChart
@@ -176,7 +155,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             />)
           }
         </View>
-        <View style={ styles.CHART_CONTAINER }>
+        <View style={ Object.keys(gqCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
           {
             Object.keys(gqCharts).map(r => <LineChart
@@ -197,7 +176,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             />)
           }
         </View>
-        <View style={ styles.CHART_CONTAINER }>
+        <View style={ Object.keys(gyCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
           {
             Object.keys(gyCharts).map(r => <LineChart

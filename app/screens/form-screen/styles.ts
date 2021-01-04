@@ -1,5 +1,5 @@
 
-import { TextInput, TextStyle, View, ViewStyle, ScrollView, Dimensions, Platform, StyleSheet, Text, processColor } from 'react-native'
+import { TextStyle, ViewStyle, Platform, StyleSheet } from 'react-native'
 
 const CONTAINER: ViewStyle = {
   height: "100%",
@@ -29,6 +29,11 @@ const FORM_SUB_HEADER: TextStyle = {
 const CHART_CONTAINER: ViewStyle = {
   minHeight: 400,
   height: 600,
+  marginTop: 10
+}
+
+const EMPTY_CHART_CONTAINER: ViewStyle = {
+  height: 50,
   marginTop: 10
 }
 
@@ -62,6 +67,7 @@ export const styles = StyleSheet.create({
   CHART_CONTAINER,
   CHART_LABEL,
   CONTAINER,
+  EMPTY_CHART_CONTAINER,
   FORM_HEADER,
   FORM_SUB_HEADER,
   HEADER_CONTAINER,
@@ -69,7 +75,7 @@ export const styles = StyleSheet.create({
   TEXT_INPUT_STYLE,
   chart: {
     flex: 1,
-    marginTop: 10,
     marginBottom: 10,
+    marginTop: 10,
   }
 })
