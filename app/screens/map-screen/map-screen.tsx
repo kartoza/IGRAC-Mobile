@@ -56,7 +56,6 @@ const MODAL_BACKGROUND: ViewStyle = {
 
 let mapViewRef = null
 let SUBS = null
-const WELL_BASE_URL = `${API_URL}/geoserver/groundwater/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=groundwater:Groundwater_Well&maxFeatures=50&outputFormat=application%2Fjson&viewparams=uuid:68bd8b0e-cd05-493b-9590-f00a0d677cfa`
 const WELL_DATA_URL = `${API_URL}/groundwater/api/well/minimized/`
 
 export interface MapScreenProps {
@@ -122,7 +121,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       next: async data => {
         if (data) {
           setWells(data)
-          await save('well', well)
+          await save('well', data)
           await renderWells(data)
           setIsViewRecord(false)
           setIsLoading(false)
