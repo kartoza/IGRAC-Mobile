@@ -27,8 +27,6 @@ const FORM_SUB_HEADER: TextStyle = {
 }
 
 const CHART_CONTAINER: ViewStyle = {
-  minHeight: 400,
-  height: 600,
   marginTop: 10
 }
 

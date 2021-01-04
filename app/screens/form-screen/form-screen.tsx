@@ -134,7 +134,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             </View>
           )}
         </Formik>
-        <View style={ Object.keys(glmCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ Object.keys(glmCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(glmCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER LEVEL</Text>
           {
             Object.keys(glmCharts).map(r => <LineChart
@@ -155,7 +155,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             />)
           }
         </View>
-        <View style={ Object.keys(gqCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ Object.keys(gqCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gqCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
           {
             Object.keys(gqCharts).map(r => <LineChart
@@ -176,7 +176,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             />)
           }
         </View>
-        <View style={ Object.keys(gyCharts).length > 0 ? styles.CHART_CONTAINER : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ Object.keys(gyCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gyCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
           {
             Object.keys(gyCharts).map(r => <LineChart
