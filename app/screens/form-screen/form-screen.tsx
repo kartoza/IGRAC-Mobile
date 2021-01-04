@@ -16,8 +16,9 @@ export interface FormScreenProps {
 export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const { route, navigation } = props
   const [wellData, setWellData] = useState({})
-  const [glmLabels, setGlmLabes] = useState([]) // Groundwater Level Measurement labels for chart
-  const [glmData, setGlmData] = useState([]) // Groundwater Level Measurement data for chart
+  const [glmCharts, setGlmCharts] = useState({}) // Groundwater Level Measurement charts
+  const [gqCharts, setGqCharts] = useState({}) // Groundwater Quality charts
+  const [gyCharts, setGyCharts] = useState({}) // Yield Measurement charts
 
   const goToMapScreen = React.useMemo(() => () => props.navigation.pop(), [
     props.navigation,
@@ -39,19 +40,47 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
         })
       }
       if (_wellData) {
-        const _glmLabels = []
-        const _glmData = []
+        const _glmCharts = {}
+        const _gqCharts = {}
+        const _gyCharts = {}
         _wellData.lm.reverse().forEach(element => {
           const dateTime = new Date(element.dt * 1000)
-          if (!glmLabels.includes(dateTime)) {
-            _glmLabels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-            _glmData.push({
-              y: parseFloat(element.v)
-            })
+          if (!_glmCharts[element.par]) {
+            _glmCharts[element.par] = {
+              data: [],
+              labels: []
+            }
           }
+          _glmCharts[element.par].data.push({ y: parseFloat(element.v) })
+          _glmCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
         })
-        setGlmLabes(_glmLabels.slice(0, 8))
-        setGlmData(_glmData.slice(0, 8))
+        setGlmCharts(_glmCharts)
+
+        _wellData.qm.reverse().forEach(element => {
+          const dateTime = new Date(element.dt * 1000)
+          if (!_gqCharts[element.par]) {
+            _gqCharts[element.par] = {
+              data: [],
+              labels: []
+            }
+          }
+          _gqCharts[element.par].data.push({ y: parseFloat(element.v) })
+          _gqCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
+        })
+        setGqCharts(_gqCharts)
+
+        _wellData.ym.reverse().forEach(element => {
+          const dateTime = new Date(element.dt * 1000)
+          if (!_gyCharts[element.par]) {
+            _gyCharts[element.par] = {
+              data: [],
+              labels: []
+            }
+          }
+          _gyCharts[element.par].data.push({ y: parseFloat(element.v) })
+          _gyCharts[element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
+        })
+        setGyCharts(_gyCharts)
       }
     })()
   }, [])
@@ -77,6 +106,20 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <TextInput
                 onChangeText={handleChange('original_id')}
                 onBlur={handleBlur('original_id')}
+                value={wellData.id}
+                style={ styles.TEXT_INPUT_STYLE }
+              />
+              <Text style={ styles.LABEL }>Organisation</Text>
+              <TextInput
+                onChangeText={handleChange('organisation')}
+                onBlur={handleBlur('organisation')}
+                value={wellData.org}
+                style={ styles.TEXT_INPUT_STYLE }
+              />
+              <Text style={ styles.LABEL }>Name</Text>
+              <TextInput
+                onChangeText={handleChange('name')}
+                onBlur={handleBlur('name')}
                 value={wellData.id}
                 style={ styles.TEXT_INPUT_STYLE }
               />
@@ -113,22 +156,69 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
           )}
         </Formik>
         <View style={ styles.CHART_CONTAINER }>
-          <Text style={ styles.CHART_LABEL }>Groundwater Level Measurement</Text>
-          <LineChart style={styles.chart}
-            data={{
-              dataSets: [{
-                label: "Groundwater Level",
-                values: glmData,
-                config: {
-                  color: processColor("teal")
-                }
-              }]
-            }}
-            xAxis={{
-              valueFormatter: glmLabels,
-            }}
-          />
+          <Text style={ styles.FORM_HEADER }>GROUNDWATER LEVEL</Text>
+          {
+            Object.keys(glmCharts).map(r => <LineChart
+              key={ r }
+              style={styles.chart}
+              data={{
+                dataSets: [{
+                  label: r,
+                  values: glmCharts[r].data,
+                  config: {
+                    color: processColor("red")
+                  }
+                }]
+              }}
+              xAxis={{
+                valueFormatter: glmCharts[r].labels,
+              }}
+            />)
+          }
         </View>
+        <View style={ styles.CHART_CONTAINER }>
+          <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
+          {
+            Object.keys(gqCharts).map(r => <LineChart
+              key={ r }
+              style={styles.chart}
+              data={{
+                dataSets: [{
+                  label: r,
+                  values: gqCharts[r].data,
+                  config: {
+                    color: processColor("red")
+                  }
+                }]
+              }}
+              xAxis={{
+                valueFormatter: gqCharts[r].labels,
+              }}
+            />)
+          }
+        </View>
+        <View style={ styles.CHART_CONTAINER }>
+          <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
+          {
+            Object.keys(gyCharts).map(r => <LineChart
+              key={ r }
+              style={styles.chart}
+              data={{
+                dataSets: [{
+                  label: r,
+                  values: gyCharts[r].data,
+                  config: {
+                    color: processColor("red")
+                  }
+                }]
+              }}
+              xAxis={{
+                valueFormatter: gyCharts[r].labels,
+              }}
+            />)
+          }
+        </View>
+        <View style={{ height: 100 }}></View>
       </ScrollView>
     </View>
   )

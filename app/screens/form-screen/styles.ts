@@ -27,8 +27,9 @@ const FORM_SUB_HEADER: TextStyle = {
 }
 
 const CHART_CONTAINER: ViewStyle = {
-  height: 400,
-  paddingBottom: 100
+  minHeight: 400,
+  height: 600,
+  marginTop: 10
 }
 
 const LABEL: TextStyle = {
@@ -67,6 +68,8 @@ export const styles = StyleSheet.create({
   LABEL,
   TEXT_INPUT_STYLE,
   chart: {
-    flex: 1
+    flex: 1,
+    marginTop: 10,
+    marginBottom: 10,
   }
 })
