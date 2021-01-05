@@ -25,7 +25,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
 
   useEffect(() => {
     ;(async () => {
-      const wells = await load('well')
+      const wells = await load("wells")
       let _wellData = null
       const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
