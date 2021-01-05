@@ -1,60 +1,23 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, createRef } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
-import { SearchBar, Button, Icon } from 'react-native-elements'
-import { View, ViewStyle, Text, ActivityIndicator, Modal, Platform, TextStyle } from "react-native"
+import { SearchBar, Button, Icon, Badge } from 'react-native-elements'
+import { PERMISSIONS, request } from "react-native-permissions"
+import { View, Text, ActivityIndicator, Modal, Platform, PermissionsAndroid } from "react-native"
+import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
 import { CancelToken } from "apisauce"
+import { styles } from "../map-screen/styles"
 import Axios from "axios"
 import {
   Observable
 } from "rxjs"
 import { load, save } from "../../utils/storage"
+import { TouchableWithoutFeedback } from "react-native-gesture-handler"
+import { delay } from "../../utils/delay"
 const { API_URL } = require("../../config/env")
 
-const ACTIVITY_INDICATOR: ViewStyle = {
-  top: 10,
-}
-const ACTIVITY_INDICATOR_WRAPPER: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "#FFFFFF",
-  borderRadius: 10,
-  display: "flex",
-  height: 140,
-  justifyContent: "space-around",
-  width: 140,
-}
-const BOTTOM_VIEW: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "white",
-  bottom: 0,
-  flexDirection: "row-reverse",
-  height: (Platform.OS === "ios") ? 80 : 60,
-  justifyContent: "center",
-  paddingBottom: (Platform.OS === "ios") ? 20 : 0,
-  position: "absolute",
-  width: "100%",
-}
-const CONTAINER: ViewStyle = {
-  height: "100%"
-}
-const MAP: ViewStyle = {
-  height: "100%",
-  marginVertical: 0,
-}
-const MODAL_TEXT: TextStyle = {
-  fontSize: 14,
-  textAlign: "center"
-}
-const MODAL_BACKGROUND: ViewStyle = {
-  alignItems: "center",
-  backgroundColor: "#00000040",
-  flex: 1,
-  flexDirection: "column",
-  justifyContent: "space-around"
-}
-
-let mapViewRef = null
+const mapViewRef = createRef()
 let SUBS = null
 const WELL_DATA_URL = `${API_URL}/groundwater/api/well/minimized/`
 
@@ -93,7 +56,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }, 10 * 1000)
 
     const uuid = await load("uuid")
-    const well = await load("well")
+    const well = await load("wells")
 
     if (well) {
       renderWells(well)
@@ -120,9 +83,10 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     SUBS = await observable$.subscribe({
       next: async data => {
         if (data) {
-          setWells(data)
-          await save('well', data)
-          await renderWells(data)
+          setWells(data.wells)
+          await save('wells', data.wells)
+          await save('terms', data.terms)
+          await renderWells(data.wells)
           setIsViewRecord(false)
           setIsLoading(false)
         }
@@ -131,6 +95,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const onRegionChange = async (region) => {
+    // setCurrentRegion(region)
     // console.log('Region changed', region)
   }
 
@@ -152,8 +117,38 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setSearch(_search)
   }
 
-  const addNewWell = () => {
-    //
+  const watchLocation = () => {
+    Geolocation.getCurrentPosition(
+      position => {
+        mapViewRef.current.animateCamera({
+          center: {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          }
+        })
+      },
+      error => {
+        console.log(error)
+      },
+      { enableHighAccuracy: true, timeout: 20000 },
+    )
+  }
+
+  const requestLocation = () => {
+    try {
+      request(
+        Platform.select({
+          android: PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+          ios: PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
+        })
+      ).then(res => {
+        if (res === "granted") {
+          watchLocation()
+        }
+      })
+    } catch (error) {
+      console.log("location set error:", error)
+    }
   }
 
   const viewRecord = React.useMemo(() => () => {
@@ -178,12 +173,6 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     getWells(WELL_DATA_URL)
   }
 
-  const buttonSpace = () => {
-    return (
-      <View style={{ width: "5%" }}></View>
-    )
-  }
-
   useEffect(() => {
     navigation.addListener('beforeRemove', (e) => {
       // e.preventDefault()
@@ -192,7 +181,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   useEffect(() => {
     ;(async () => {
-      getWells(WELL_DATA_URL)
+      await getWells(WELL_DATA_URL)
+      requestLocation()
     })()
     return function cleanup() {
       if (SUBS) {
@@ -203,7 +193,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }, [])
 
   return (
-    <View style = { CONTAINER }>
+    <View style = { styles.CONTAINER }>
       <SearchBar
         placeholder="Search"
         lightTheme
@@ -215,15 +205,9 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         showLoading={ isLoading }
       />
       <MapView
-        initialRegion={{
-          latitude: -42.000264798711555,
-          latitudeDelta: 4.996117525719413,
-          longitude: 146.6129632294178,
-          longitudeDelta: 3.703794702887535
-        }}
-        ref = {(mapView) => { mapViewRef = mapView }}
+        ref = { mapViewRef }
         onRegionChange={ onRegionChange }
-        style={ MAP }
+        style={ styles.MAP }
         loadingEnabled={true}
         showsUserLocation={true}
         moveOnMarkerPress = {true}
@@ -248,51 +232,78 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         animationType={"none"}
         visible={ isLoading }
         onRequestClose={() => { setIsLoading(false) }}>
-        <View style={ MODAL_BACKGROUND }>
-          <View style={ ACTIVITY_INDICATOR_WRAPPER }>
+        <View style={ styles.MODAL_BACKGROUND }>
+          <View style={ styles.ACTIVITY_INDICATOR_WRAPPER }>
             <ActivityIndicator
-              animating={ isLoading } size="large" color="#ff8000" style={ ACTIVITY_INDICATOR } />
-            <Text style={ MODAL_TEXT }>Loading...</Text>
+              animating={ isLoading } size="large" color="#ff8000" style={ styles.ACTIVITY_INDICATOR } />
+            <Text style={ styles.MODAL_TEXT }>Loading...</Text>
           </View>
         </View>
       </Modal>
 
-      { isViewRecord ? ( // Refresh map
-        (() => {
-          return (
-            <View style={ BOTTOM_VIEW }>
+      { isViewRecord
+        ? (
+          <View style={ styles.MID_BOTTOM_CONTAINER }>
+            <View style={ styles.MID_BOTTOM_CONTENTS }>
+              <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell }</Text>
               <Button
                 title="View Record"
                 type="outline"
                 raised
-                buttonStyle={{ borderColor: '#005198', backgroundColor: "#005198", width: "100%" }}
+                buttonStyle={ styles.MID_BOTTOM_BUTTON }
                 titleStyle={{ color: "#ffffff" }}
-                containerStyle={{ width: "90%" }}
+                containerStyle={{ width: "60%" }}
                 onPress={ () => { viewRecord() }}
               />
             </View>
-          )
-        })()) : (
-        <View style={ BOTTOM_VIEW }>
-          <Button
-            icon={
-              <Icon
-                name="plus"
-                type="font-awesome"
-                size={15}
-                color="#ffffff"
-              />
-            }
-            title="  Add New Well"
-            type="outline"
-            raised
-            buttonStyle={{ borderColor: '#ff6b0d', backgroundColor: "#ff6b0d", width: "100%" }}
-            titleStyle={{ color: "#ffffff" }}
-            containerStyle={{ width: "90%" }}
-            onPress={ () => { addNewWell() }}
-          />
-        </View>
-      )}
+          </View>
+        ) : <View></View>}
+
+      <View style={ styles.BOTTOM_VIEW }>
+        <Button
+          icon={
+            <Icon
+              name="user-circle"
+              type="font-awesome"
+              size={25}
+              color="rgb(196, 196, 196)"
+            ></Icon>
+          }
+          buttonStyle={ styles.USER_BUTTON }
+          containerStyle={ styles.USER_BUTTON_CONTAINER }
+          TouchableComponent={TouchableWithoutFeedback}
+        >
+        </Button>
+        <Button
+          icon={
+            <Icon
+              name="location-arrow"
+              type="font-awesome"
+              size={30}
+              color="#ffffff"
+            />
+          }
+          title=""
+          type="outline"
+          buttonStyle={ styles.LOCATE_ME_BUTTON }
+          containerStyle={ styles.LOCATE_ME_CONTAINER }
+          onPress={ () => { watchLocation() }}
+        />
+        <Button
+          icon={
+            <Icon
+              name="refresh"
+              type="font-awesome"
+              size={25}
+              color="rgb(196, 196, 196)"
+            ></Icon>
+          }
+          buttonStyle={ styles.SYNC_BUTTON }
+          containerStyle={ styles.SYNC_BUTTON_CONTAINER }
+          TouchableComponent={TouchableWithoutFeedback}
+        ></Button>
+        <Badge value="4" status="error" containerStyle={ styles.SYNC_BADGE } />
+      </View>
     </View>
   )
 }
