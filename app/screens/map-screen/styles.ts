@@ -24,7 +24,7 @@ const BOTTOM_VIEW: ViewStyle = {
   width: "100%",
 }
 const CONTAINER: ViewStyle = {
-  height: "100%"
+  height: "100%",
 }
 const MAP: ViewStyle = {
   height: "100%",
@@ -71,6 +71,37 @@ const SYNC_BADGE: ViewStyle = {
   top: 5
 }
 
+const MID_BOTTOM_CONTAINER: ViewStyle = {
+  alignItems: "center",
+  alignContent: "center",
+  bottom: (Platform.OS === "ios") ? 100 : 80,
+  paddingBottom: (Platform.OS === "ios") ? 20 : 0,
+  width: "100%",
+  position: "absolute",
+  justifyContent: "center",
+  flexDirection: "row-reverse",
+}
+
+const MID_BOTTOM_CONTENTS: ViewStyle = {
+  alignItems: "center",
+  alignContent: "center",
+  backgroundColor: "white",
+  height: 120,
+  width: "80%",
+  borderRadius: 5
+}
+
+const MID_BOTTOM_TEXT: TextStyle = {
+  padding: 18,
+  fontWeight: "bold",
+  color: "rgb(74, 74, 74)"
+}
+
+const MID_BOTTOM_BUTTON: ViewStyle = {
+  backgroundColor: "rgb(241, 137, 3)",
+  borderColor: "rgb(241, 137, 3)"
+}
+
 export const styles = StyleSheet.create({
   ACTIVITY_INDICATOR,
   ACTIVITY_INDICATOR_WRAPPER,
@@ -79,6 +110,10 @@ export const styles = StyleSheet.create({
   LOCATE_ME_BUTTON,
   LOCATE_ME_CONTAINER,
   MAP,
+  MID_BOTTOM_BUTTON,
+  MID_BOTTOM_CONTAINER,
+  MID_BOTTOM_CONTENTS,
+  MID_BOTTOM_TEXT,
   MODAL_BACKGROUND,
   MODAL_TEXT,
   SYNC_BADGE,

@@ -241,68 +241,69 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         </View>
       </Modal>
 
-      { isViewRecord ? ( // Refresh map
-        (() => {
-          return (
-            <View style={ styles.BOTTOM_VIEW }>
+      { isViewRecord
+        ? (
+          <View style={ styles.MID_BOTTOM_CONTAINER }>
+            <View style={ styles.MID_BOTTOM_CONTENTS }>
+              <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell }</Text>
               <Button
                 title="View Record"
                 type="outline"
                 raised
-                buttonStyle={{ borderColor: '#005198', backgroundColor: "#005198", width: "100%" }}
+                buttonStyle={ styles.MID_BOTTOM_BUTTON }
                 titleStyle={{ color: "#ffffff" }}
-                containerStyle={{ width: "90%" }}
+                containerStyle={{ width: "60%" }}
                 onPress={ () => { viewRecord() }}
               />
             </View>
-          )
-        })()) : (
-        <View style={ styles.BOTTOM_VIEW }>
-          <Button
-            icon={
-              <Icon
-                name="user-circle"
-                type="font-awesome"
-                size={25}
-                color="rgb(196, 196, 196)"
-              ></Icon>
-            }
-            buttonStyle={ styles.USER_BUTTON }
-            containerStyle={ styles.USER_BUTTON_CONTAINER }
-            TouchableComponent={TouchableWithoutFeedback}
-          >
-          </Button>
-          <Button
-            icon={
-              <Icon
-                name="location-arrow"
-                type="font-awesome"
-                size={30}
-                color="#ffffff"
-              />
-            }
-            title=""
-            type="outline"
-            buttonStyle={ styles.LOCATE_ME_BUTTON }
-            containerStyle={ styles.LOCATE_ME_CONTAINER }
-            onPress={ () => { watchLocation() }}
-          />
-          <Button
-            icon={
-              <Icon
-                name="refresh"
-                type="font-awesome"
-                size={25}
-                color="rgb(196, 196, 196)"
-              ></Icon>
-            }
-            buttonStyle={ styles.SYNC_BUTTON }
-            containerStyle={ styles.SYNC_BUTTON_CONTAINER }
-            TouchableComponent={TouchableWithoutFeedback}
-          ></Button>
-          <Badge value="4" status="error" containerStyle={ styles.SYNC_BADGE } />
-        </View>
-      )}
+          </View>
+        ) : <View></View>}
+
+      <View style={ styles.BOTTOM_VIEW }>
+        <Button
+          icon={
+            <Icon
+              name="user-circle"
+              type="font-awesome"
+              size={25}
+              color="rgb(196, 196, 196)"
+            ></Icon>
+          }
+          buttonStyle={ styles.USER_BUTTON }
+          containerStyle={ styles.USER_BUTTON_CONTAINER }
+          TouchableComponent={TouchableWithoutFeedback}
+        >
+        </Button>
+        <Button
+          icon={
+            <Icon
+              name="location-arrow"
+              type="font-awesome"
+              size={30}
+              color="#ffffff"
+            />
+          }
+          title=""
+          type="outline"
+          buttonStyle={ styles.LOCATE_ME_BUTTON }
+          containerStyle={ styles.LOCATE_ME_CONTAINER }
+          onPress={ () => { watchLocation() }}
+        />
+        <Button
+          icon={
+            <Icon
+              name="refresh"
+              type="font-awesome"
+              size={25}
+              color="rgb(196, 196, 196)"
+            ></Icon>
+          }
+          buttonStyle={ styles.SYNC_BUTTON }
+          containerStyle={ styles.SYNC_BUTTON_CONTAINER }
+          TouchableComponent={TouchableWithoutFeedback}
+        ></Button>
+        <Badge value="4" status="error" containerStyle={ styles.SYNC_BADGE } />
+      </View>
     </View>
   )
 }
