@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
+import { Button, Header } from 'react-native-elements'
 import { TextInput, View, ScrollView, Text, processColor } from 'react-native'
 import { Formik } from 'formik'
 import { LineChart } from 'react-native-charts-wrapper'
-import { Header } from "react-native-elements"
 import { load } from "../../utils/storage"
 import { styles } from "../form-screen/styles"
 
@@ -23,44 +23,62 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     props.navigation,
   ])
 
-  useEffect(() => {
-    ;(async () => {
-      const wells = await load("wells")
-      let _wellData = null
-      const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-      ]
-      if (wells) {
-        wells.forEach((data) => {
-          if (data.id === route.params.wellName) {
-            setWellData(data)
-            _wellData = data
+  const loadWellData = async () => {
+    const wells = await load("wells")
+    let _wellData = null
+    const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ]
+    if (wells) {
+      wells.forEach((data) => {
+        if (data.id === route.params.wellName) {
+          setWellData(data)
+          _wellData = data
+        }
+      })
+    }
+    if (_wellData) {
+      const _chartData = {
+        lm: {}, // Groundwater Level Measurement charts
+        qm: {}, // Groundwater Quality charts
+        ym: {} // Yield Measurement charts
+      }
+      for (const chartType in _chartData) {
+        _wellData[chartType].forEach(element => {
+          const dateTime = new Date(element.dt * 1000)
+          if (!_chartData[chartType][element.par]) {
+            _chartData[chartType][element.par] = {
+              data: [],
+              labels: []
+            }
           }
+          _chartData[chartType][element.par].data.push({ y: parseFloat(element.v) })
+          _chartData[chartType][element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
         })
       }
-      if (_wellData) {
-        const _chartData = {
-          lm: {}, // Groundwater Level Measurement charts
-          qm: {}, // Groundwater Quality charts
-          ym: {} // Yield Measurement charts
-        }
-        for (const chartType in _chartData) {
-          _wellData[chartType].reverse().forEach(element => {
-            const dateTime = new Date(element.dt * 1000)
-            if (!_chartData[chartType][element.par]) {
-              _chartData[chartType][element.par] = {
-                data: [],
-                labels: []
-              }
-            }
-            _chartData[chartType][element.par].data.push({ y: parseFloat(element.v) })
-            _chartData[chartType][element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-          })
-        }
-        setGlmCharts(_chartData.lm)
-        setGqCharts(_chartData.qm)
-        setGyCharts(_chartData.ym)
-      }
+      setGlmCharts(_chartData.lm)
+      setGqCharts(_chartData.qm)
+      setGyCharts(_chartData.ym)
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const refresh = async () => {
+    loadWellData()
+  }
+
+  const goToMeasurementFormScreen = React.useMemo(() => () => props.navigation.navigate("measurementForm", {
+    wellId: wellData.pk || '',
+    onGoBack: () => refresh()
+  }), [
+    props.navigation,
+    wellData,
+    refresh
+  ])
+
+  useEffect(() => {
+    ;(async () => {
+      await loadWellData()
     })()
   }, [])
 
@@ -154,6 +172,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               }}
             />)
           }
+          <Button title="Add measurement" onPress={ () => { goToMeasurementFormScreen() }}></Button>
         </View>
         <View style={ Object.keys(gqCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gqCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
