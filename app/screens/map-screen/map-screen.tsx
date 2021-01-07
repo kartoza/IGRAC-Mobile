@@ -1,9 +1,9 @@
 import React, { useState, useEffect, createRef } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
-import { ParamListBase } from "@react-navigation/native"
+import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import { SearchBar, Button, Icon, Badge } from 'react-native-elements'
 import { PERMISSIONS, request } from "react-native-permissions"
-import { View, Text, ActivityIndicator, Modal, Platform, PermissionsAndroid } from "react-native"
+import { View, Text, ActivityIndicator, Modal, Platform } from "react-native"
 import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
 import { CancelToken } from "apisauce"
@@ -14,7 +14,7 @@ import {
 } from "rxjs"
 import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { delay } from "../../utils/delay"
+import { getTotalQueue } from "../../models/sync"
 const { API_URL } = require("../../config/env")
 
 const mapViewRef = createRef()
@@ -33,6 +33,17 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [isLoading, setIsLoading] = useState(true)
   const [isViewRecord, setIsViewRecord] = useState(false)
   const [selectedWell, setSelectedWell] = useState('')
+  const [unsyncedData, setUnsyncedData] = useState(0)
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const getUnsyncedData = async () => {
+        const totalQueue = await getTotalQueue()
+        setUnsyncedData(totalQueue)
+      }
+      getUnsyncedData()
+    }, [])
+  )
 
   const renderWells = (data) => {
     const _markers = []
@@ -302,7 +313,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           containerStyle={ styles.SYNC_BUTTON_CONTAINER }
           TouchableComponent={TouchableWithoutFeedback}
         ></Button>
-        <Badge value="4" status="error" containerStyle={ styles.SYNC_BADGE } />
+        <Badge value={ unsyncedData } status="error" containerStyle={ styles.SYNC_BADGE } />
       </View>
     </View>
   )

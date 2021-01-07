@@ -41,6 +41,11 @@ const LABEL: TextStyle = {
   marginTop: 10
 }
 
+const REQUIRED_LABEL: TextStyle = {
+  ...LABEL,
+  fontWeight: 'bold'
+}
+
 const CHART_LABEL: TextStyle = {
   ...LABEL,
   marginTop: 0,
@@ -55,10 +60,25 @@ const TEXT_INPUT_STYLE: ViewStyle = {
   paddingLeft: 10
 }
 
+const PICKER_INPUT_STYLE: ViewStyle = {
+  transform: [{ scaleX: 0.90 }, { scaleY: 0.90 }],
+  left: -25,
+}
+
+const MULTIPLE_INPUT_STYLE: ViewStyle = {
+  ...TEXT_INPUT_STYLE,
+  flex: 1,
+  flexDirection: "row"
+}
+
 const HEADER_CONTAINER: ViewStyle = {
   backgroundColor: "#005198",
   height: 80,
   marginTop: (Platform.OS === "ios") ? -25 : 0
+}
+
+const SUBMIT_BUTTON: ViewStyle = {
+  marginTop: 10
 }
 
 export const styles = StyleSheet.create({
@@ -70,6 +90,10 @@ export const styles = StyleSheet.create({
   FORM_SUB_HEADER,
   HEADER_CONTAINER,
   LABEL,
+  MULTIPLE_INPUT_STYLE,
+  PICKER_INPUT_STYLE,
+  REQUIRED_LABEL,
+  SUBMIT_BUTTON,
   TEXT_INPUT_STYLE,
   chart: {
     flex: 1,
