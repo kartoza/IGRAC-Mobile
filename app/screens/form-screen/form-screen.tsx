@@ -14,7 +14,7 @@ export interface FormScreenProps {
 
 export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const { route, navigation } = props
-  const [wellData, setWellData] = useState({})
+  const [wellData, setWellData] = useState({} as any)
   const [glmCharts, setGlmCharts] = useState({}) // Groundwater Level Measurement charts
   const [gqCharts, setGqCharts] = useState({}) // Groundwater Quality charts
   const [gyCharts, setGyCharts] = useState({}) // Yield Measurement charts
@@ -172,7 +172,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               }}
             />)
           }
-          <Button title="Add measurement" onPress={ () => { goToMeasurementFormScreen() }}></Button>
+          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen() }}></Button>
         </View>
         <View style={ Object.keys(gqCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gqCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>

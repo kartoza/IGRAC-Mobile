@@ -97,6 +97,11 @@ const MID_BOTTOM_TEXT: TextStyle = {
   color: "rgb(74, 74, 74)"
 }
 
+const MID_BOTTOM_SUB_TEXT: TextStyle = {
+  fontSize: 12,
+  color: "rgb(74, 74, 74)"
+}
+
 const MID_BOTTOM_BUTTON: ViewStyle = {
   backgroundColor: "rgb(241, 137, 3)",
   borderColor: "rgb(241, 137, 3)"
@@ -113,6 +118,7 @@ export const styles = StyleSheet.create({
   MID_BOTTOM_BUTTON,
   MID_BOTTOM_CONTAINER,
   MID_BOTTOM_CONTENTS,
+  MID_BOTTOM_SUB_TEXT,
   MID_BOTTOM_TEXT,
   MODAL_BACKGROUND,
   MODAL_TEXT,

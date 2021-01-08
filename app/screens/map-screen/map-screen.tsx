@@ -3,7 +3,7 @@ import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import { SearchBar, Button, Icon, Badge } from 'react-native-elements'
 import { PERMISSIONS, request } from "react-native-permissions"
-import { View, Text, ActivityIndicator, Modal, Platform } from "react-native"
+import { View, Text, ActivityIndicator, Modal, Platform, Alert } from "react-native"
 import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
 import { CancelToken } from "apisauce"
@@ -14,7 +14,11 @@ import {
 } from "rxjs"
 import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { getTotalQueue } from "../../models/sync"
+import { getQueue, syncQueue, SyncResult } from "../../models/sync"
+import { delay } from "../../utils/delay"
+import NetInfo from "@react-native-community/netinfo"
+import * as Progress from 'react-native-progress'
+import { result } from "validate.js"
 const { API_URL } = require("../../config/env")
 
 const mapViewRef = createRef()
@@ -31,21 +35,23 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [markers, setMarkers] = useState([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [isViewRecord, setIsViewRecord] = useState(false)
   const [selectedWell, setSelectedWell] = useState('')
-  const [unsyncedData, setUnsyncedData] = useState(0)
+  const [unsyncedData, setUnsyncedData] = useState([])
+  const [syncProgress, setSyncProgress] = useState(0)
 
   useFocusEffect(
     React.useCallback(() => {
       const getUnsyncedData = async () => {
-        const totalQueue = await getTotalQueue()
-        setUnsyncedData(totalQueue)
+        const _unsyncedData = await getQueue() || []
+        setUnsyncedData(_unsyncedData)
       }
       getUnsyncedData()
     }, [])
   )
 
-  const renderWells = (data) => {
+  const drawMarkers = (data) => {
     const _markers = []
     data.forEach((data) => {
       _markers.push({
@@ -60,7 +66,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setMarkers(_markers)
   }
 
-  const getWells = async (wellUrl) => {
+  const getWells = async () => {
     const source = CancelToken.source()
     setTimeout(() => {
       source.cancel()
@@ -70,7 +76,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     const well = await load("wells")
 
     if (well) {
-      renderWells(well)
+      drawMarkers(well)
       setIsViewRecord(false)
       setIsLoading(false)
       setWells(well)
@@ -78,7 +84,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
 
     const observable$ = Observable.create(observer => {
-      Axios.get(`${wellUrl}`, {
+      Axios.get(`${WELL_DATA_URL}`, {
         cancelToken: source.token,
         headers: {
           Authorization: `Token ${uuid}`
@@ -97,7 +103,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           setWells(data.wells)
           await save('wells', data.wells)
           await save('terms', data.terms)
-          await renderWells(data.wells)
+          await drawMarkers(data.wells)
           setIsViewRecord(false)
           setIsLoading(false)
         }
@@ -120,7 +126,6 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const mapSelected = async (e) => {
-    // console.log('Map selected', e)
     markerDeselected()
   }
 
@@ -141,7 +146,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       error => {
         console.log(error)
       },
-      { enableHighAccuracy: true, timeout: 20000 },
+      { enableHighAccuracy: true, timeout: 1000 },
     )
   }
 
@@ -162,13 +167,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
   }
 
-  const viewRecord = React.useMemo(() => () => {
-    return props.navigation.navigate("form", { wellName: selectedWell }), [
-      props.navigation,
-    ]
-  })
+  const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", { wellName: selectedWell }), [
+    props.navigation,
+    selectedWell
+  ])
 
-  const submitSearch = () => {
+  const submitSearch = async() => {
     setIsLoading(true)
     const results = []
     wells.forEach((data) => {
@@ -176,24 +180,62 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         results.push(data)
       }
     })
-    renderWells(results)
+    drawMarkers(results)
     setIsLoading(false)
   }
 
   const onClearSearch = async() => {
-    getWells(WELL_DATA_URL)
+    getWells()
+  }
+
+  const showError = (errorMessage) => {
+    Alert.alert(
+      "Error",
+      errorMessage
+    )
+  }
+
+  const checkConnection = async() => {
+    return NetInfo.fetch().then(state => {
+      return state.isConnected
+    })
+  }
+
+  const syncData = async() => {
+    if (isSyncing || unsyncedData.length === 0) {
+      return
+    }
+    const isConnected = await checkConnection()
+    if (!isConnected) {
+      showError("No internet connection available, please try again later")
+      return
+    }
+
+    markerDeselected()
+    setIsSyncing(true)
+    const _unsyncedData = Object.assign([], unsyncedData)
+    const _tempUnsyncedData = Object.assign([], unsyncedData)
+    let syncResult = {} as SyncResult
+    for (let i = 0; i < _unsyncedData.length; i++) {
+      syncResult = await syncQueue(_unsyncedData[i], _tempUnsyncedData)
+      console.log(syncResult)
+      if (!syncResult.synced) {
+        showError("One of the data can't be synchronized")
+        break
+      }
+      setSyncProgress(i + 1)
+    }
+
+    await delay(500)
+    setUnsyncedData(syncResult.currentUnsyncedQueue)
+    setIsSyncing(false)
+    setSyncProgress(0)
   }
 
   useEffect(() => {
-    navigation.addListener('beforeRemove', (e) => {
-      // e.preventDefault()
-    })
-  }, [navigation])
-
-  useEffect(() => {
     ;(async () => {
-      await getWells(WELL_DATA_URL)
-      requestLocation()
+      await getWells()
+      delay(500).then(() => requestLocation())
     })()
     return function cleanup() {
       if (SUBS) {
@@ -218,6 +260,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       <MapView
         ref = { mapViewRef }
         onRegionChange={ onRegionChange }
+        followsUserLocation
         style={ styles.MAP }
         loadingEnabled={true}
         showsUserLocation={true}
@@ -251,6 +294,17 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           </View>
         </View>
       </Modal>
+
+      { isSyncing
+        ? (
+          <View style={ styles.MID_BOTTOM_CONTAINER }>
+            <View style={ styles.MID_BOTTOM_CONTENTS }>
+              <Text style={ styles.MID_BOTTOM_TEXT }>Sync is on</Text>
+              <Text style={ styles.MID_BOTTOM_SUB_TEXT }>{ syncProgress } records of { unsyncedData.length } are synced</Text>
+              <Progress.Bar color={ "rgb(241, 137, 3)" } height={ 12 } progress={ (syncProgress / unsyncedData.length) } width={250} />
+            </View>
+          </View>
+        ) : <View></View>}
 
       { isViewRecord
         ? (
@@ -306,14 +360,15 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
               name="refresh"
               type="font-awesome"
               size={25}
-              color="rgb(196, 196, 196)"
+              color={ isSyncing ? "rgb(241, 137, 3)" : "rgb(196, 196, 196)" }
             ></Icon>
           }
+          onPress={() => syncData() }
           buttonStyle={ styles.SYNC_BUTTON }
           containerStyle={ styles.SYNC_BUTTON_CONTAINER }
           TouchableComponent={TouchableWithoutFeedback}
         ></Button>
-        <Badge value={ unsyncedData } status="error" containerStyle={ styles.SYNC_BADGE } />
+        { unsyncedData.length > 0 ? <Badge value={ unsyncedData.length } status="error" containerStyle={ styles.SYNC_BADGE } /> : <View></View> }
       </View>
     </View>
   )

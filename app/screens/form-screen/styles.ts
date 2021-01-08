@@ -31,7 +31,7 @@ const CHART_CONTAINER: ViewStyle = {
 }
 
 const EMPTY_CHART_CONTAINER: ViewStyle = {
-  height: 50,
+  height: 70,
   marginTop: 10
 }
 

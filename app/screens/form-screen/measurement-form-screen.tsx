@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from "react"
 import Moment from 'moment'
 import { Picker } from "@react-native-picker/picker"
@@ -6,12 +7,18 @@ import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { ParamListBase } from "@react-navigation/native"
 import { Formik } from 'formik'
-import { TextInput, View, ScrollView, Text, Platform, Alert } from 'react-native'
+import { TextInput, View, ScrollView, Text, Platform, Alert, LogBox } from 'react-native'
 import { styles } from "../form-screen/styles"
 import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
 import { delay } from "../../utils/delay"
 import { addToQueue } from "../../models/sync"
+import { feetToMeters } from "../../utils/convert"
+const { API_URL } = require("../../config/env")
+
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+])
 
 export interface MeasurementFormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -46,14 +53,14 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
     }
   }
 
-  const updateLocalWell = async (data) => {
+  const updateWell = async (localData, queueData) => {
     const wells = await load("wells")
     wells.forEach(async (well) => {
       if (well.pk === wellId) {
-        well.lm.push(data)
+        well.lm.push(localData)
         await addToQueue({
-          data: data,
-          url: `https://staging.igrac.kartoza.com/groundwater/api/well/${well.pk}/edit`,
+          data: queueData,
+          url: `${API_URL}/groundwater/api/well/${well.pk}/edit`,
           method: 'POST'
         })
       }
@@ -65,15 +72,30 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   const submitForm = async (data) => {
     if (loading) return
     if ('value' in data && data.value) {
-      const parsedData = {
+      setLoading(true)
+      let dataValue = data.value
+      if (data.unit === 'ft') {
+        dataValue = feetToMeters(data.value)
+      }
+      const localData = {
         id: "",
         dt: data.dateTime || Moment(date).unix(),
         mt: data.methodology || "",
         par: data.parameter,
-        v: data.value
+        v: dataValue
       }
-      setLoading(true)
-      await updateLocalWell(parsedData)
+      const queueData = {
+        level_measurement: [{
+          id: "",
+          time: data.dateTime || Moment(date).unix(),
+          parameter: data.parameter,
+          methodology: data.methodology || "",
+          value_id: "",
+          value_value: data.value,
+          value_unit: data.unit || "m"
+        }]
+      }
+      await updateWell(localData, queueData)
       setLoading(false)
       route.params.onGoBack()
       props.navigation.goBack()
@@ -101,7 +123,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
     <View>
       <Header
         placement="center"
-        leftComponent={{ icon: "chevron-left", size: 30, color: "#fff", onPress: () => backToPreviousScreen() }}
+        leftComponent={{ icon: "chevron-left", size: 30, color: "#fff", onPress: () => props.navigation.goBack() }}
         centerComponent={{ text: "Measurement Form", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
       />
