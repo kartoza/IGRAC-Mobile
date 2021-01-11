@@ -4,6 +4,7 @@ import { ApiConfig, DEFAULT_API_CONFIG } from "./api-config"
 import * as Types from "./api.types"
 import { load } from "../../utils/storage"
 import Well, { WellInterface } from "../../models/well/well"
+import { raw } from "@storybook/react-native"
 
 /**
  * Manages all requests to the API.
@@ -120,8 +121,30 @@ export class Api {
     // transform the data into the format we are expecting
     try {
       const rawData = response.data
-      const resultWells: Well[] = rawData.wells.map((raw) => new Well().convertFromMinimizedData(raw))
-      return { kind: "ok", wells: resultWells }
+      const resultWells: Well[] = rawData.wells.map((raw) => new Well({}).convertFromMinimizedData(raw))
+      return { kind: "ok", wells: resultWells, terms: rawData.terms }
+    } catch {
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Gets a single well by ID
+   */
+
+  async getWell(id: string): Promise<Types.GetWellResult> {
+    // make the api call
+    const response: ApiResponse<any> = await this.apisauce.get(`/groundwater/api/well/minimized/?limit=1&pks=${id}`)
+
+    // the typical ways to die when calling an api
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    // transform the data into the format we are expecting
+    try {
+      return { kind: "ok", well: new Well({}).convertFromMinimizedData(raw.wells[0]) }
     } catch {
       return { kind: "bad-data" }
     }

@@ -8,4 +8,5 @@ export interface User {
 
 export type GetUsersResult = { kind: "ok"; users: User[] } | GeneralApiProblem
 export type GetUserResult = { kind: "ok"; user: User } | GeneralApiProblem
-export type GetWellsResult = { kind: "ok"; wells: WellInterface[] } | GeneralApiProblem
+export type GetWellsResult = { kind: "ok"; wells: WellInterface[]; terms: any[] } | GeneralApiProblem
+export type GetWellResult = { kind: "ok"; well: WellInterface; terms?: any[] } | GeneralApiProblem

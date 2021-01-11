@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import Well from "./well"
-import { getWellByField, loadWells, saveWells } from "./well.store"
+import Well, { MeasurementType, Measurement } from "./well"
+import { getWellByField, loadWells, saveWells, updateWellMeasurement } from "./well.store"
 
 const minimizedData = {
   id: "1",
@@ -22,26 +22,59 @@ const minimizedData = {
   ym: []
 }
 
+const well = new Well({}).convertFromMinimizedData(minimizedData)
+
 it("converts from minimized data", () => {
-  const well = new Well({}).convertFromMinimizedData(minimizedData)
   expect(well.name).toBe("test")
 })
 
 it("converts measurements data", () => {
-  const well = new Well({}).convertFromMinimizedData(minimizedData)
-  expect(well.levelMeasurements[0].value).toBe(100)
+  expect(well.level_measurements[0].value).toBe(100)
 })
 
 it("stores the wells", async () => {
-  const wells = [new Well({}).convertFromMinimizedData(minimizedData)]
+  const wells = [well]
   await saveWells(wells)
   const storedWells = await loadWells()
   expect(storedWells[0].name).toBe(wells[0].name)
 })
 
 it("gets well by field", async() => {
-  const wells = [new Well({}).convertFromMinimizedData(minimizedData)]
+  const wells = [well]
   await saveWells(wells)
-  const well = await getWellByField("id", "1")
-  expect(well.name).toBe("test")
+  const _well = await getWellByField("id", "1")
+  expect(_well.name).toBe("test")
+})
+
+it("adds new measurement data", async () => {
+  const measurementData: Measurement = {
+    id: "",
+    datetime: 123,
+    methodology: "methodology",
+    parameter: "parameter",
+    value: 100,
+    unit: "m"
+  }
+  await well.addMeasurementData(
+    MeasurementType.LevelMeasurements,
+    measurementData)
+  expect(well.level_measurements[1].datetime).toBe(measurementData.datetime)
+})
+
+it("updates well measurement data", async () => {
+  const measurementData: Measurement = {
+    id: "",
+    datetime: 134,
+    methodology: "methodology",
+    parameter: "parameter",
+    value: 100,
+    unit: "m"
+  }
+  await updateWellMeasurement(
+    minimizedData.pk,
+    measurementData,
+    MeasurementType.LevelMeasurements
+  )
+  const updatedWell = await getWellByField('pk', minimizedData.pk)
+  expect(updatedWell.level_measurements[1].datetime).toBe(measurementData.datetime)
 })

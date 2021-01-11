@@ -6,26 +6,18 @@ import { PERMISSIONS, request } from "react-native-permissions"
 import { View, Text, ActivityIndicator, Modal, Platform, Alert } from "react-native"
 import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
-import { CancelToken } from "apisauce"
 import { styles } from "../map-screen/styles"
-import Axios from "axios"
-import {
-  Observable
-} from "rxjs"
-import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { getQueue, syncQueue, SyncResult, syncPullData } from "../../models/sync"
+import { getUnsynced, pushUnsyncedData, SyncResult, syncPullData } from "../../models/sync/sync"
 import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
 import { Api } from "../../services/api/api"
-import { GeneralApiProblem } from "../../services/api/api-problem"
 import { loadWells, saveWells } from "../../models/well/well.store"
-const { API_URL } = require("../../config/env")
+import { saveTerms } from "../../models/well/term.store"
 
 const mapViewRef = createRef()
 let SUBS = null
-const WELL_DATA_URL = `${API_URL}/groundwater/api/well/minimized/`
 
 export interface MapScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>
@@ -47,7 +39,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   useFocusEffect(
     React.useCallback(() => {
       const getUnsyncedData = async () => {
-        const _unsyncedData = await getQueue() || []
+        const _unsyncedData = await getUnsynced() || []
         setUnsyncedData(_unsyncedData)
       }
       getUnsyncedData()
@@ -71,12 +63,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const getWells = async() => {
     let wells = await loadWells()
-    if (!wells) {
+    if (wells.length === 0) {
       const api = new Api()
       await api.setup()
-      const getWellsApiResult = await api.getWells()
-      if (getWellsApiResult.kind === "ok") {
-        wells = getWellsApiResult.wells
+      const apiResult = await api.getWells()
+      if (apiResult.kind === "ok") {
+        wells = apiResult.wells
+        await saveTerms(apiResult.terms)
       }
       await saveWells(wells)
     }
@@ -183,20 +176,19 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     await syncPullData(setSyncProgress, setSyncMessage)
   }
 
-  const syncPushQueue = async() => {
+  const pushUnsynced = async() => {
     const _unsyncedData = Object.assign([], unsyncedData)
-    const _tempUnsyncedData = Object.assign([], unsyncedData)
     let syncResult = {} as SyncResult
     for (let i = 0; i < _unsyncedData.length; i++) {
       setSyncMessage(`${i + 1} records of ${unsyncedData.length} are synced`)
-      syncResult = await syncQueue(_unsyncedData[i], _tempUnsyncedData)
+      syncResult = await pushUnsyncedData(_unsyncedData[i])
       if (!syncResult.synced) {
         showError("One of the data can't be synchronized")
         break
       }
       setSyncProgress((i + 1) / unsyncedData.length)
     }
-    setUnsyncedData(syncResult.currentUnsyncedQueue)
+    setUnsyncedData(await getUnsynced())
   }
 
   const syncData = async() => {
@@ -212,11 +204,11 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setIsSyncing(true)
 
     if (unsyncedData.length > 0) {
-      await syncPushQueue()
+      await pushUnsynced()
     }
     await syncUpdateWell()
 
-    await delay(500)
+    await delay(250)
     setSyncMessage('')
     setIsSyncing(false)
     setSyncProgress(0)

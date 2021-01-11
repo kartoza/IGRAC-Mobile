@@ -9,12 +9,12 @@ import { ParamListBase } from "@react-navigation/native"
 import { Formik } from 'formik'
 import { TextInput, View, ScrollView, Text, Platform, Alert, LogBox } from 'react-native'
 import { styles } from "../form-screen/styles"
-import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
 import { delay } from "../../utils/delay"
-import { addToQueue } from "../../models/sync"
 import { feetToMeters } from "../../utils/convert"
-const { API_URL } = require("../../config/env")
+import { loadTerms } from "../../models/well/term.store"
+import { updateWellMeasurement } from "../../models/well/well.store"
+import { MeasurementType } from "../../models/well/well"
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -49,26 +49,8 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
     if (mode === 'date') {
       openDatePicker('time')
     } else {
-      setFieldValue('dateTime', Moment(currentDate).unix())
+      setFieldValue('datetime', Moment(currentDate).unix())
     }
-  }
-
-  const updateWell = async (localData, queueData) => {
-    const wells = await load("wells")
-    wells.forEach(async (well) => {
-      if (well.pk === wellId) {
-        well.lm.push(localData)
-        await addToQueue({
-          data: queueData,
-          url: `${API_URL}/groundwater/api/well/${well.pk}/edit`,
-          method: 'POST',
-          pk: well.pk,
-          dataType: 'level_measurement'
-        })
-      }
-    })
-    await save("wells", wells)
-    await delay(500).then(() => console.log('Processed'))
   }
 
   const submitForm = async (data) => {
@@ -79,28 +61,18 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
       if (data.unit === 'ft') {
         dataValue = feetToMeters(data.value)
       }
-      const tempId = Date.now()
-      const localData = {
+      const measurementData = {
         id: "",
-        dt: data.dateTime || Moment(date).unix(),
-        mt: data.methodology || "",
-        par: data.parameter,
-        v: dataValue,
-        tempId: tempId
+        datetime: data.datetime || Moment(date).unix(),
+        methodology: data.methodology || "",
+        parameter: data.parameter,
+        value: dataValue
       }
-      const queueData = {
-        level_measurement: [{
-          id: "",
-          time: data.dateTime || Moment(date).unix(),
-          parameter: data.parameter,
-          methodology: data.methodology || "",
-          value_id: "",
-          value_value: data.value,
-          value_unit: data.unit || "m",
-          tempId: tempId
-        }]
-      }
-      await updateWell(localData, queueData)
+      await updateWellMeasurement(
+        wellId,
+        measurementData,
+        MeasurementType.LevelMeasurements)
+      await delay(500).then(() => console.log('Processed'))
       setLoading(false)
       route.params.onGoBack()
       props.navigation.goBack()
@@ -114,7 +86,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
 
   useEffect(() => {
     ;(async () => {
-      const terms = await load("terms")
+      const terms = await loadTerms()
       const measurementParams = terms.measurement_parameters['Level Measurement']
       setLevelMeasurementParameters(Object.keys(measurementParams))
       setSelectedLevelMeasurement(levelMeasurementParameters[0])
