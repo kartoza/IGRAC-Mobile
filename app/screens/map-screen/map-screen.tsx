@@ -14,11 +14,13 @@ import {
 } from "rxjs"
 import { load, save } from "../../utils/storage"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { getQueue, syncQueue, SyncResult } from "../../models/sync"
+import { getQueue, syncQueue, SyncResult, syncPullData } from "../../models/sync"
 import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
-import { result } from "validate.js"
+import { Api } from "../../services/api/api"
+import { GeneralApiProblem } from "../../services/api/api-problem"
+import { loadWells, saveWells } from "../../models/well/well.store"
 const { API_URL } = require("../../config/env")
 
 const mapViewRef = createRef()
@@ -36,6 +38,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState('')
   const [isViewRecord, setIsViewRecord] = useState(false)
   const [selectedWell, setSelectedWell] = useState('')
   const [unsyncedData, setUnsyncedData] = useState([])
@@ -56,8 +59,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     data.forEach((data) => {
       _markers.push({
         coordinate: {
-          latitude: data.loc[0],
-          longitude: data.loc[1]
+          latitude: data.latitude,
+          longitude: data.longitude
         },
         title: data.id,
         key: data.id
@@ -66,49 +69,23 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setMarkers(_markers)
   }
 
-  const getWells = async () => {
-    const source = CancelToken.source()
-    setTimeout(() => {
-      source.cancel()
-    }, 10 * 1000)
-
-    const uuid = await load("uuid")
-    const well = await load("wells")
-
-    if (well) {
-      drawMarkers(well)
+  const getWells = async() => {
+    let wells = await loadWells()
+    if (!wells) {
+      const api = new Api()
+      await api.setup()
+      const getWellsApiResult = await api.getWells()
+      if (getWellsApiResult.kind === "ok") {
+        wells = getWellsApiResult.wells
+      }
+      await saveWells(wells)
+    }
+    if (wells) {
+      drawMarkers(wells)
       setIsViewRecord(false)
       setIsLoading(false)
-      setWells(well)
-      return
+      setWells(wells)
     }
-
-    const observable$ = Observable.create(observer => {
-      Axios.get(`${WELL_DATA_URL}`, {
-        cancelToken: source.token,
-        headers: {
-          Authorization: `Token ${uuid}`
-        }
-      })
-        .then(response => {
-          observer.next(response.data)
-          observer.complete()
-        }).catch(error => {
-          console.log(error)
-        })
-    })
-    SUBS = await observable$.subscribe({
-      next: async data => {
-        if (data) {
-          setWells(data.wells)
-          await save('wells', data.wells)
-          await save('terms', data.terms)
-          await drawMarkers(data.wells)
-          setIsViewRecord(false)
-          setIsLoading(false)
-        }
-      }
-    })
   }
 
   const onRegionChange = async (region) => {
@@ -201,8 +178,29 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     })
   }
 
+  const syncUpdateWell = async() => {
+    setSyncMessage("Updating well data")
+    await syncPullData(setSyncProgress, setSyncMessage)
+  }
+
+  const syncPushQueue = async() => {
+    const _unsyncedData = Object.assign([], unsyncedData)
+    const _tempUnsyncedData = Object.assign([], unsyncedData)
+    let syncResult = {} as SyncResult
+    for (let i = 0; i < _unsyncedData.length; i++) {
+      setSyncMessage(`${i + 1} records of ${unsyncedData.length} are synced`)
+      syncResult = await syncQueue(_unsyncedData[i], _tempUnsyncedData)
+      if (!syncResult.synced) {
+        showError("One of the data can't be synchronized")
+        break
+      }
+      setSyncProgress((i + 1) / unsyncedData.length)
+    }
+    setUnsyncedData(syncResult.currentUnsyncedQueue)
+  }
+
   const syncData = async() => {
-    if (isSyncing || unsyncedData.length === 0) {
+    if (isSyncing) {
       return
     }
     const isConnected = await checkConnection()
@@ -210,24 +208,16 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       showError("No internet connection available, please try again later")
       return
     }
-
     markerDeselected()
     setIsSyncing(true)
-    const _unsyncedData = Object.assign([], unsyncedData)
-    const _tempUnsyncedData = Object.assign([], unsyncedData)
-    let syncResult = {} as SyncResult
-    for (let i = 0; i < _unsyncedData.length; i++) {
-      syncResult = await syncQueue(_unsyncedData[i], _tempUnsyncedData)
-      console.log(syncResult)
-      if (!syncResult.synced) {
-        showError("One of the data can't be synchronized")
-        break
-      }
-      setSyncProgress(i + 1)
+
+    if (unsyncedData.length > 0) {
+      await syncPushQueue()
     }
+    await syncUpdateWell()
 
     await delay(500)
-    setUnsyncedData(syncResult.currentUnsyncedQueue)
+    setSyncMessage('')
     setIsSyncing(false)
     setSyncProgress(0)
   }
@@ -300,8 +290,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           <View style={ styles.MID_BOTTOM_CONTAINER }>
             <View style={ styles.MID_BOTTOM_CONTENTS }>
               <Text style={ styles.MID_BOTTOM_TEXT }>Sync is on</Text>
-              <Text style={ styles.MID_BOTTOM_SUB_TEXT }>{ syncProgress } records of { unsyncedData.length } are synced</Text>
-              <Progress.Bar color={ "rgb(241, 137, 3)" } height={ 12 } progress={ (syncProgress / unsyncedData.length) } width={250} />
+              <Text style={ styles.MID_BOTTOM_SUB_TEXT }>{ syncMessage }</Text>
+              <Progress.Bar color={ "rgb(241, 137, 3)" } height={ 12 } progress={ syncProgress } width={250} />
             </View>
           </View>
         ) : <View></View>}

@@ -2,6 +2,8 @@ import { ApisauceInstance, create, ApiResponse } from "apisauce"
 import { getGeneralApiProblem } from "./api-problem"
 import { ApiConfig, DEFAULT_API_CONFIG } from "./api-config"
 import * as Types from "./api.types"
+import { load } from "../../utils/storage"
+import Well, { WellInterface } from "../../models/well/well"
 
 /**
  * Manages all requests to the API.
@@ -33,13 +35,15 @@ export class Api {
    *
    * Be as quick as possible in here.
    */
-  setup() {
+  async setup() {
     // construct the apisauce instance
+    const uuid = await load("uuid")
     this.apisauce = create({
       baseURL: this.config.url,
       timeout: this.config.timeout,
       headers: {
         Accept: "application/json",
+        Authorization: `Token ${uuid}`
       },
     })
   }
@@ -95,6 +99,29 @@ export class Api {
         name: response.data.name,
       }
       return { kind: "ok", user: resultUser }
+    } catch {
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Get a list of wells
+   */
+  async getWells(): Promise<Types.GetWellsResult> {
+    // make the api call
+    const response: ApiResponse<any> = await this.apisauce.get(`/groundwater/api/well/minimized/`)
+
+    // the typical ways to die when calling an api
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    // transform the data into the format we are expecting
+    try {
+      const rawData = response.data
+      const resultWells: Well[] = rawData.wells.map((raw) => new Well().convertFromMinimizedData(raw))
+      return { kind: "ok", wells: resultWells }
     } catch {
       return { kind: "bad-data" }
     }

@@ -5,8 +5,8 @@ import { Button, Header } from 'react-native-elements'
 import { TextInput, View, ScrollView, Text, processColor } from 'react-native'
 import { Formik } from 'formik'
 import { LineChart } from 'react-native-charts-wrapper'
-import { load } from "../../utils/storage"
 import { styles } from "../form-screen/styles"
+import { getWellByField, loadWells } from "../../models/well/well.store"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -24,41 +24,34 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   ])
 
   const loadWellData = async () => {
-    const wells = await load("wells")
-    let _wellData = null
+    const _wellData = await getWellByField("id", route.params.wellName)
+    setWellData(_wellData)
     const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ]
-    if (wells) {
-      wells.forEach((data) => {
-        if (data.id === route.params.wellName) {
-          setWellData(data)
-          _wellData = data
-        }
-      })
-    }
     if (_wellData) {
       const _chartData = {
-        lm: {}, // Groundwater Level Measurement charts
-        qm: {}, // Groundwater Quality charts
-        ym: {} // Yield Measurement charts
+        levelMeasurements: {}, // Groundwater Level Measurement charts
+        qualityMeasurements: {}, // Groundwater Quality charts
+        yieldMeasurements: {} // Yield Measurement charts
       }
-      for (const chartType in _chartData) {
-        _wellData[chartType].forEach(element => {
-          const dateTime = new Date(element.dt * 1000)
-          if (!_chartData[chartType][element.par]) {
-            _chartData[chartType][element.par] = {
+      const wellMeasurementsData = _wellData.allMeasurements()
+      for (const measurement in wellMeasurementsData) {
+        wellMeasurementsData[measurement].forEach(element => {
+          const dateTime = new Date(element.datetime * 1000)
+          if (!_chartData[measurement][element.parameter]) {
+            _chartData[measurement][element.parameter] = {
               data: [],
               labels: []
             }
           }
-          _chartData[chartType][element.par].data.push({ y: parseFloat(element.v) })
-          _chartData[chartType][element.par].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
+          _chartData[measurement][element.parameter].data.push({ y: parseFloat(element.value) })
+          _chartData[measurement][element.parameter].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
         })
       }
-      setGlmCharts(_chartData.lm)
-      setGqCharts(_chartData.qm)
-      setGyCharts(_chartData.ym)
+      setGlmCharts(_chartData.levelMeasurements)
+      setGqCharts(_chartData.qualityMeasurements)
+      setGyCharts(_chartData.yieldMeasurements)
     }
   }
 
@@ -110,42 +103,42 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <TextInput
                 onChangeText={handleChange('organisation')}
                 onBlur={handleBlur('organisation')}
-                value={wellData.org}
+                value={wellData.organisation}
                 style={ styles.TEXT_INPUT_STYLE }
               />
               <Text style={ styles.LABEL }>Name</Text>
               <TextInput
                 onChangeText={handleChange('name')}
                 onBlur={handleBlur('name')}
-                value={wellData.id}
+                value={wellData.name}
                 style={ styles.TEXT_INPUT_STYLE }
               />
               <Text style={styles.LABEL}>Status</Text>
               <TextInput
                 onChangeText={handleChange('status')}
                 onBlur={handleBlur('status')}
-                value={wellData.st}
+                value={wellData.status}
                 style={ styles.TEXT_INPUT_STYLE }
               />
               <Text style={styles.LABEL}>Feature type</Text>
               <TextInput
                 onChangeText={handleChange('feature_type')}
                 onBlur={handleBlur('feature_type')}
-                value={wellData.ft}
+                value={wellData.featureType}
                 style={ styles.TEXT_INPUT_STYLE }
               />
               <Text style={ styles.LABEL }>Purpose</Text>
               <TextInput
                 onChangeText={handleChange('purpose')}
                 onBlur={handleBlur('purpose')}
-                value={wellData.p}
+                value={wellData.purpose}
                 style={ styles.TEXT_INPUT_STYLE }
               />
               <Text style={styles.LABEL}>Description</Text>
               <TextInput
                 onChangeText={handleChange('description')}
                 onBlur={handleBlur('description')}
-                value={wellData.dsc}
+                value={wellData.description}
                 multiline
                 style={ styles.TEXT_INPUT_STYLE }
               />

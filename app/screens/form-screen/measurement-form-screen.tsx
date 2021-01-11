@@ -61,7 +61,9 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         await addToQueue({
           data: queueData,
           url: `${API_URL}/groundwater/api/well/${well.pk}/edit`,
-          method: 'POST'
+          method: 'POST',
+          pk: well.pk,
+          dataType: 'level_measurement'
         })
       }
     })
@@ -77,12 +79,14 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
       if (data.unit === 'ft') {
         dataValue = feetToMeters(data.value)
       }
+      const tempId = Date.now()
       const localData = {
         id: "",
         dt: data.dateTime || Moment(date).unix(),
         mt: data.methodology || "",
         par: data.parameter,
-        v: dataValue
+        v: dataValue,
+        tempId: tempId
       }
       const queueData = {
         level_measurement: [{
@@ -92,7 +96,8 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
           methodology: data.methodology || "",
           value_id: "",
           value_value: data.value,
-          value_unit: data.unit || "m"
+          value_unit: data.unit || "m",
+          tempId: tempId
         }]
       }
       await updateWell(localData, queueData)
