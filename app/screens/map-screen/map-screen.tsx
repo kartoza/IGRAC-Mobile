@@ -173,7 +173,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const syncUpdateWell = async() => {
     setSyncMessage("Updating well data")
-    await syncPullData(setSyncProgress, setSyncMessage)
+    await syncPullData(setSyncProgress, setSyncMessage, showError)
   }
 
   const pushUnsynced = async() => {
@@ -206,6 +206,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     if (unsyncedData.length > 0) {
       await pushUnsynced()
     }
+    await delay(250)
     await syncUpdateWell()
 
     await delay(250)

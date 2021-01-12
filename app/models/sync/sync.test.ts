@@ -81,5 +81,7 @@ it("merges remote data with stored local data", async() => {
   await saveWells([well])
   await mergeWithSynced(await loadWells())
   const wells = await loadWells()
+  const synced = await getSynced()
+  expect(synced['1'].length).toBe(1)
   expect(wells[0].level_measurements.length).toBe(2)
 })

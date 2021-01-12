@@ -134,7 +134,7 @@ export class Api {
 
   async getWell(id: string): Promise<Types.GetWellResult> {
     // make the api call
-    const response: ApiResponse<any> = await this.apisauce.get(`/groundwater/api/well/minimized/?limit=1&pks=${id}`)
+    const response: ApiResponse<any> = await this.apisauce.get(`/groundwater/api/well/minimized/?limit=2&pks=${id}`)
 
     // the typical ways to die when calling an api
     if (!response.ok) {
@@ -144,6 +144,7 @@ export class Api {
 
     // transform the data into the format we are expecting
     try {
+      const raw = response.data
       return { kind: "ok", well: new Well({}).convertFromMinimizedData(raw.wells[0]) }
     } catch {
       return { kind: "bad-data" }

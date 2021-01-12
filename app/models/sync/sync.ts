@@ -78,7 +78,7 @@ export const moveToSynced = async (unsyncedData: SyncData) => {
 }
 
 // Get synced data from storage
-export const getSynced = async (): Promise<SyncData[]> => {
+export const getSynced = async () => {
   return await load("synced") || {}
 }
 
@@ -126,36 +126,36 @@ export const mergeWithSynced = async (wells: Well[]) => {
   let wellsUpdated = false
   wells.forEach((well, index) => {
     if (well.pk in synced) {
-      Object.keys(synced).forEach((key, sIndex) => {
-        synced[key].forEach(syncedData => {
-          if (isMeasurementData(syncedData)) {
-            const wellMeasurements = well[syncedData.dataType]
-            let measurementDataFound = false
-            wellMeasurements.forEach(measurement => {
-              if (measurement.id === syncedData.data.id) {
-                measurementDataFound = true
-                return false
-              }
-              return true
-            })
-            if (!measurementDataFound) {
-              wellsUpdated = true
-              wells[index].addMeasurementData(
-                syncedData.dataType,
-                syncedData.data)
+      synced[well.pk].forEach((syncedData, sIndex) => {
+        if (isMeasurementData(syncedData)) {
+          const wellMeasurements = well[syncedData.dataType]
+          let measurementDataFound = false
+          wellMeasurements.forEach(measurement => {
+            if (measurement.id === syncedData.data.id) {
+              measurementDataFound = true
+              synced[well.pk].splice(sIndex, 1)
+              return false
             }
+            return true
+          })
+          if (!measurementDataFound) {
+            wellsUpdated = true
+            wells[index].addMeasurementData(
+              syncedData.dataType,
+              syncedData.data)
           }
-        })
+        }
       })
     }
   })
+  await save("synced", synced)
   if (wellsUpdated) {
     await saveWells(wells)
   }
 }
 
 // Fetch well data from server, then merge it with local synced data
-export const syncPullData = async(setSyncProgress: any, setSyncMessage: any) => {
+export const syncPullData = async(setSyncProgress: any, setSyncMessage: any, showError: any) => {
   const wells = await loadWells()
   const api = new Api()
   await api.setup()
@@ -165,6 +165,9 @@ export const syncPullData = async(setSyncProgress: any, setSyncMessage: any) => 
     const apiResult = await api.getWell(wells[i].pk)
     if (apiResult.kind === "ok") {
       wells[i] = apiResult.well
+    } else {
+      showError("One of the data can't be synchronized")
+      return
     }
   }
   await delay(250)
