@@ -7,6 +7,7 @@ import { Formik } from 'formik'
 import { LineChart } from 'react-native-charts-wrapper'
 import { styles } from "../form-screen/styles"
 import { getWellByField, loadWells } from "../../models/well/well.store"
+import { MeasurementType } from "../../models/well/well"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -63,8 +64,9 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     loadWellData()
   }
 
-  const goToMeasurementFormScreen = React.useMemo(() => () => props.navigation.navigate("measurementForm", {
+  const goToMeasurementFormScreen = React.useMemo(() => (measurementType) => props.navigation.navigate("measurementForm", {
     wellId: wellData.pk || '',
+    measurementType: measurementType,
     onGoBack: () => refresh()
   }), [
     props.navigation,
@@ -168,7 +170,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               }}
             />)
           }
-          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen() }}></Button>
+          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.LevelMeasurements) }}></Button>
         </View>
         <View style={ Object.keys(gqCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gqCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
@@ -190,6 +192,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               }}
             />)
           }
+          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.QualityMeasurements) }}></Button>
         </View>
         <View style={ Object.keys(gyCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gyCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
@@ -211,6 +214,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               }}
             />)
           }
+          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.YieldMeasurements) }}></Button>
         </View>
         <View style={{ height: 100 }}></View>
       </ScrollView>

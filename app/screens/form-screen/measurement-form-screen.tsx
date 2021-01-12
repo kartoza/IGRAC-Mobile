@@ -36,6 +36,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   const [selectedLevelMeasurement, setSelectedLevelMeasurement] = useState('')
   const [units, setUnits] = useState([])
   const [selectedUnit, setSelectedUnit] = useState('')
+  const [headerLabel, setHeaderLabel] = useState('')
 
   const openDatePicker = (mode = 'date') => {
     setShowDatePicker(true)
@@ -66,12 +67,13 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         datetime: data.datetime || Moment(date).unix(),
         methodology: data.methodology || "",
         parameter: data.parameter,
-        value: dataValue
+        value: dataValue,
+        unit: data.unit || ""
       }
       await updateWellMeasurement(
         wellId,
         measurementData,
-        MeasurementType.LevelMeasurements)
+        route.params.measurementType)
       await delay(500).then(() => console.log('Processed'))
       setLoading(false)
       route.params.onGoBack()
@@ -87,7 +89,20 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   useEffect(() => {
     ;(async () => {
       const terms = await loadTerms()
-      const measurementParams = terms.measurement_parameters['Level Measurement']
+      let measurementTerm = ""
+      let measurementTitle = ""
+      if (route.params.measurementType === MeasurementType.LevelMeasurements) {
+        measurementTerm = "Level Measurement"
+        measurementTitle = "Groundwater Level"
+      } else if (route.params.measurementType === MeasurementType.YieldMeasurements) {
+        measurementTerm = "Yield Measurement"
+        measurementTitle = "Abstraction / Discharge"
+      } else if (route.params.measurementType === MeasurementType.QualityMeasurements) {
+        measurementTerm = "Quality Measurement"
+        measurementTitle = "Groundwater Quality"
+      }
+      setHeaderLabel(measurementTitle)
+      const measurementParams = terms.measurement_parameters[measurementTerm]
       setLevelMeasurementParameters(Object.keys(measurementParams))
       setSelectedLevelMeasurement(levelMeasurementParameters[0])
       setLevelMeasurementUnits(measurementParams)
@@ -101,7 +116,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
       <Header
         placement="center"
         leftComponent={{ icon: "chevron-left", size: 30, color: "#fff", onPress: () => props.navigation.goBack() }}
-        centerComponent={{ text: "Measurement Form", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
+        centerComponent={{ text: headerLabel, style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
       />
       <ScrollView style = { styles.CONTAINER }>
