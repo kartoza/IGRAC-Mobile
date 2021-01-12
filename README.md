@@ -1,5 +1,7 @@
 # IGRAC Mobile
 
+![Install dependencies and run tests](https://github.com/kartoza/igrac-mobile/workflows/Install%20dependencies%20and%20run%20tests/badge.svg)
+
 ## :clipboard: Documentation
 
 Mockups : https://www.figma.com/proto/5cJAFVZLHDukWBg7cqYkly

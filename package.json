@@ -113,6 +113,9 @@
   },
   "jest": {
     "preset": "react-native",
+    "globals": {
+      "__TEST__": true
+    },
     "setupFiles": [
       "<rootDir>/node_modules/react-native/jest/setup.js",
       "<rootDir>/test/setup.ts"
@@ -159,6 +162,7 @@
       }
     },
     "globals": {
+      "__TEST__": false,
       "__DEV__": false,
       "jasmine": false,
       "beforeAll": false,
