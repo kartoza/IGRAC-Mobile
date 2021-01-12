@@ -37,16 +37,19 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
       }
       const wellMeasurementsData = _wellData.allMeasurements()
       for (const measurement in wellMeasurementsData) {
+        wellMeasurementsData[measurement].sort((a, b) => (a.datetime < b.datetime ? -1 : 1))
         wellMeasurementsData[measurement].forEach(element => {
           const dateTime = new Date(element.datetime * 1000)
           if (!_chartData[measurement][element.parameter]) {
             _chartData[measurement][element.parameter] = {
               data: [],
-              labels: []
+              labels: [],
+              datetime: []
             }
           }
           _chartData[measurement][element.parameter].data.push({ y: parseFloat(element.value) })
           _chartData[measurement][element.parameter].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
+          _chartData[measurement][element.parameter].datetime.push(dateTime)
         })
       }
       setGlmCharts(_chartData.levelMeasurements)
