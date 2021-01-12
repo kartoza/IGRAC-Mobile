@@ -5,5 +5,5 @@ export const saveTerms = async (terms) => {
 }
 
 export const loadTerms = async () => {
-  return await load("terms")
+  return await load("terms") || []
 }

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import Well, { MeasurementType, Measurement } from "./well"
-import { getWellByField, loadWells, saveWells, updateWellMeasurement } from "./well.store"
+import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField } from "./well.store"
 
 const minimizedData = {
   id: "1",
@@ -37,6 +37,14 @@ it("stores the wells", async () => {
   await saveWells(wells)
   const storedWells = await loadWells()
   expect(storedWells[0].name).toBe(wells[0].name)
+})
+
+it("saves the well by field", async() => {
+  const wells = await loadWells()
+  wells[0].name = "updated"
+  await saveWellByField("pk", wells[0].pk, wells[0])
+  const updatedWells = await loadWells()
+  expect(updatedWells[0].name).toBe("updated")
 })
 
 it("gets well by field", async() => {
