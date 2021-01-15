@@ -27,7 +27,8 @@ const FORM_SUB_HEADER: TextStyle = {
 }
 
 const CHART_CONTAINER: ViewStyle = {
-  marginTop: 10
+  marginTop: 10,
+  height: 500
 }
 
 const EMPTY_CHART_CONTAINER: ViewStyle = {
@@ -65,6 +66,11 @@ const PICKER_INPUT_STYLE: ViewStyle = {
   left: -25,
 }
 
+const PICKER_SM_INPUT_STYLE: ViewStyle = {
+  // transform: [{ scaleX: 0.70 }, { scaleY: 0.70 }],
+  // left: 0,
+}
+
 const MULTIPLE_INPUT_STYLE: ViewStyle = {
   ...TEXT_INPUT_STYLE,
   flex: 1,
@@ -92,6 +98,7 @@ export const styles = StyleSheet.create({
   LABEL,
   MULTIPLE_INPUT_STYLE,
   PICKER_INPUT_STYLE,
+  PICKER_SM_INPUT_STYLE,
   REQUIRED_LABEL,
   SUBMIT_BUTTON,
   TEXT_INPUT_STYLE,
@@ -99,5 +106,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 10,
     marginTop: 10,
+    minHeight: 150
   }
 })
