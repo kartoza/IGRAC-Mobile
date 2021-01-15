@@ -15,6 +15,7 @@ import { feetToMeters } from "../../utils/convert"
 import { loadTerms } from "../../models/well/term.store"
 import { updateWellMeasurement } from "../../models/well/well.store"
 import { MeasurementType } from "../../models/well/well"
+import { getUnsynced } from "../../models/sync/sync"
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -31,10 +32,9 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   const [wellId, setWellId] = useState(route.params.wellId || '')
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [mode, setMode] = useState('date')
-  const [levelMeasurementParameters, setLevelMeasurementParameters] = useState([])
-  const [levelMeasurementUnits, setLevelMeasurementUnits] = useState({})
+  const [measurementParameters, setMeasurementParameters] = useState([])
+  const [measurementUnits, setMeasurementUnits] = useState({})
   const [selectedLevelMeasurement, setSelectedLevelMeasurement] = useState('')
-  const [units, setUnits] = useState([])
   const [selectedUnit, setSelectedUnit] = useState('')
   const [headerLabel, setHeaderLabel] = useState('')
 
@@ -59,16 +59,19 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
     if ('value' in data && data.value) {
       setLoading(true)
       let dataValue = data.value
-      if (data.unit === 'ft') {
+      const dataParameter = data.parameter || selectedLevelMeasurement
+      let dataUnit = data.unit || selectedUnit || ""
+      if (dataUnit === 'ft') {
         dataValue = feetToMeters(data.value)
+        dataUnit = "m"
       }
       const measurementData = {
         id: "",
         datetime: data.datetime || Moment(date).unix(),
         methodology: data.methodology || "",
-        parameter: data.parameter,
+        parameter: dataParameter,
         value: dataValue,
-        unit: data.unit || ""
+        unit: dataUnit || ""
       }
       await updateWellMeasurement(
         wellId,
@@ -76,7 +79,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         route.params.measurementType)
       await delay(500).then(() => console.log('Processed'))
       setLoading(false)
-      route.params.onGoBack()
+      route.params.onGoBack(data.parameter, dataUnit)
       props.navigation.goBack()
     } else {
       Alert.alert(
@@ -89,6 +92,8 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   useEffect(() => {
     ;(async () => {
       const terms = await loadTerms()
+      const unsynced = await getUnsynced()
+      console.log(unsynced)
       let measurementTerm = ""
       let measurementTitle = ""
       if (route.params.measurementType === MeasurementType.LevelMeasurements) {
@@ -101,13 +106,17 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         measurementTerm = "Quality Measurement"
         measurementTitle = "Groundwater Quality"
       }
-      setHeaderLabel(measurementTitle)
       const measurementParams = terms.measurement_parameters[measurementTerm]
-      setLevelMeasurementParameters(Object.keys(measurementParams))
-      setSelectedLevelMeasurement(levelMeasurementParameters[0])
-      setLevelMeasurementUnits(measurementParams)
-      setUnits(measurementParams[Object.keys(measurementParams)[0]])
-      setSelectedUnit(measurementParams[Object.keys(measurementParams)[0]][0])
+      setHeaderLabel(measurementTitle)
+      setMeasurementParameters(Object.keys(measurementParams))
+      setMeasurementUnits(measurementParams)
+      if (route.params.selectedParameter) {
+        setSelectedLevelMeasurement(route.params.selectedParameter)
+        setSelectedUnit(route.params.selectedUnit)
+      } else {
+        setSelectedLevelMeasurement(Object.keys(measurementParams)[0])
+        setSelectedUnit(measurementParams[Object.keys(measurementParams)[0]][0])
+      }
     })()
   }, [])
 
@@ -143,13 +152,12 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
                   style={ styles.PICKER_INPUT_STYLE }
                   onValueChange={(itemValue, itemIndex) => {
                     setSelectedLevelMeasurement(itemValue + '')
-                    setUnits(levelMeasurementUnits[itemValue])
-                    setSelectedUnit(levelMeasurementUnits[itemValue][0])
+                    setSelectedUnit(measurementUnits[itemValue][0])
                     setFieldValue('parameter', itemValue)
                   }
                   }>
                   {
-                    levelMeasurementParameters.map(r => <Picker.Item key={ r } label={ r } value={ r } />)
+                    measurementParameters.map(r => <Picker.Item key={ r } label={ r } value={ r } />)
                   }
                 </Picker>
               </View>
@@ -170,7 +178,9 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
                   }}
                   style={{ width: "40%" }}>
                   {
-                    units.map(r => <Picker.Item key={ r } label={ r } value={ r } />)
+                    typeof measurementUnits[selectedLevelMeasurement] !== "undefined"
+                      ? measurementUnits[selectedLevelMeasurement].map(r => <Picker.Item key={ r } label={ r } value={ r } />)
+                      : <Picker.Item key="" label="" value="" />
                   }
                 </Picker>
               </View>

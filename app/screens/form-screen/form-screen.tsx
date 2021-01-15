@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
+import { Picker } from "@react-native-picker/picker"
 import { Button, Header } from 'react-native-elements'
 import { TextInput, View, ScrollView, Text, processColor } from 'react-native'
 import { Formik } from 'formik'
@@ -8,6 +9,9 @@ import { LineChart } from 'react-native-charts-wrapper'
 import { styles } from "../form-screen/styles"
 import { getWellByField, loadWells } from "../../models/well/well.store"
 import { MeasurementType } from "../../models/well/well"
+import { loadTerms } from "../../models/well/term.store"
+import { metersToFeet } from "../../utils/convert"
+import { MeasurementChart } from "../../components/measurement-chart/measurement-chart"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -16,58 +20,27 @@ export interface FormScreenProps {
 export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const { route, navigation } = props
   const [wellData, setWellData] = useState({} as any)
-  const [glmCharts, setGlmCharts] = useState({}) // Groundwater Level Measurement charts
-  const [gqCharts, setGqCharts] = useState({}) // Groundwater Quality charts
-  const [gyCharts, setGyCharts] = useState({}) // Yield Measurement charts
 
   const goToMapScreen = React.useMemo(() => () => props.navigation.pop(), [
     props.navigation,
   ])
 
-  const loadWellData = async () => {
+  const loadWellData = async (measurementType?, selectedParameter?, selectedUnit?) => {
     const _wellData = await getWellByField("id", route.params.wellName)
     setWellData(_wellData)
-    const monthShortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ]
-    if (_wellData) {
-      const _chartData = {
-        levelMeasurements: {}, // Groundwater Level Measurement charts
-        qualityMeasurements: {}, // Groundwater Quality charts
-        yieldMeasurements: {} // Yield Measurement charts
-      }
-      const wellMeasurementsData = _wellData.allMeasurements()
-      for (const measurement in wellMeasurementsData) {
-        wellMeasurementsData[measurement].sort((a, b) => (a.datetime < b.datetime ? -1 : 1))
-        wellMeasurementsData[measurement].forEach(element => {
-          const dateTime = new Date(element.datetime * 1000)
-          if (!_chartData[measurement][element.parameter]) {
-            _chartData[measurement][element.parameter] = {
-              data: [],
-              labels: [],
-              datetime: []
-            }
-          }
-          _chartData[measurement][element.parameter].data.push({ y: parseFloat(element.value) })
-          _chartData[measurement][element.parameter].labels.push(dateTime.getDate() + ' ' + monthShortNames[dateTime.getMonth()])
-          _chartData[measurement][element.parameter].datetime.push(dateTime)
-        })
-      }
-      setGlmCharts(_chartData.levelMeasurements)
-      setGqCharts(_chartData.qualityMeasurements)
-      setGyCharts(_chartData.yieldMeasurements)
-    }
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const refresh = async () => {
-    loadWellData()
+  const refresh = async (measurementType, selectedParameter, selectedUnit) => {
+    loadWellData(measurementType, selectedParameter, selectedUnit)
   }
 
-  const goToMeasurementFormScreen = React.useMemo(() => (measurementType) => props.navigation.navigate("measurementForm", {
+  const goToMeasurementFormScreen = React.useMemo(() => (measurementType, selectedParameter?, selectedUnit?) => props.navigation.navigate("measurementForm", {
     wellId: wellData.pk || '',
     measurementType: measurementType,
-    onGoBack: () => refresh()
+    selectedParameter: selectedParameter,
+    selectedUnit: selectedUnit,
+    onGoBack: (parameter, unit) => refresh(measurementType, parameter, unit)
   }), [
     props.navigation,
     wellData,
@@ -150,71 +123,35 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             </View>
           )}
         </Formik>
-        <View style={ Object.keys(glmCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(glmCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ styles.CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER LEVEL</Text>
-          {
-            Object.keys(glmCharts).map(r => <LineChart
-              key={ r }
-              style={styles.chart}
-              data={{
-                dataSets: [{
-                  label: r,
-                  values: glmCharts[r].data,
-                  config: {
-                    color: processColor("red")
-                  }
-                }]
-              }}
-              xAxis={{
-                valueFormatter: glmCharts[r].labels,
-              }}
-            />)
+          { typeof wellData.level_measurements !== "undefined"
+            ? <MeasurementChart
+              measurementData={wellData.level_measurements}
+              measurementType={MeasurementType.LevelMeasurements}
+              onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.LevelMeasurements, selectedParameter, selectedUnit)}
+            ></MeasurementChart> : <View></View>
           }
-          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.LevelMeasurements) }}></Button>
         </View>
-        <View style={ Object.keys(gqCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gqCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ styles.CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
-          {
-            Object.keys(gqCharts).map(r => <LineChart
-              key={ r }
-              style={styles.chart}
-              data={{
-                dataSets: [{
-                  label: r,
-                  values: gqCharts[r].data,
-                  config: {
-                    color: processColor("red")
-                  }
-                }]
-              }}
-              xAxis={{
-                valueFormatter: gqCharts[r].labels,
-              }}
-            />)
+          { typeof wellData.quality_measurements !== "undefined"
+            ? <MeasurementChart
+              measurementData={wellData.quality_measurements}
+              measurementType={MeasurementType.QualityMeasurements}
+              onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.QualityMeasurements, selectedParameter, selectedUnit)}
+            ></MeasurementChart> : <View></View>
           }
-          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.QualityMeasurements) }}></Button>
         </View>
-        <View style={ Object.keys(gyCharts).length > 0 ? (styles.CHART_CONTAINER, { height: Object.keys(gyCharts).length * 250 }) : styles.EMPTY_CHART_CONTAINER }>
+        <View style={ styles.CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
-          {
-            Object.keys(gyCharts).map(r => <LineChart
-              key={ r }
-              style={styles.chart}
-              data={{
-                dataSets: [{
-                  label: r,
-                  values: gyCharts[r].data,
-                  config: {
-                    color: processColor("red")
-                  }
-                }]
-              }}
-              xAxis={{
-                valueFormatter: gyCharts[r].labels,
-              }}
-            />)
+          { typeof wellData.yield_measurements !== "undefined"
+            ? <MeasurementChart
+              measurementData={wellData.yield_measurements}
+              measurementType={MeasurementType.YieldMeasurements}
+              onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.YieldMeasurements, selectedParameter, selectedUnit)}
+            ></MeasurementChart> : <View></View>
           }
-          <Button containerStyle={{ marginTop: 5 }} title="Add measurement" onPress={ () => { goToMeasurementFormScreen(MeasurementType.YieldMeasurements) }}></Button>
         </View>
         <View style={{ height: 100 }}></View>
       </ScrollView>

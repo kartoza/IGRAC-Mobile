@@ -10,6 +10,11 @@ export interface WellInterface {
   pk: number
   id: string
   name: string
+  organisation?: string
+  status?: string
+  feature_type?: string
+  purpose?: string
+  description?: string
   latitude: number
   longitude: number
   level_measurements?: Measurement[]
@@ -38,6 +43,11 @@ export default class Well implements WellInterface {
     name: string
     latitude: number
     longitude: number
+    organisation?: string
+    status?: string
+    feature_type?: string
+    purpose?: string
+    description?: string
     level_measurements: Measurement[]
     quality_measurements: Measurement[]
     yield_measurements: Measurement[]
@@ -48,6 +58,11 @@ export default class Well implements WellInterface {
       this.name = minimizedData.nm || ""
       this.latitude = minimizedData.loc[0]
       this.longitude = minimizedData.loc[1]
+      this.organisation = minimizedData.org
+      this.purpose = minimizedData.p
+      this.feature_type = minimizedData.ft
+      this.description = minimizedData.dsc
+      this.status = minimizedData.st
 
       const convertMeasurement = (measurementData) => {
         return {
@@ -107,6 +122,11 @@ export default class Well implements WellInterface {
         this.name = well.name
         this.latitude = well.latitude
         this.longitude = well.longitude
+        this.organisation = well.organisation
+        this.purpose = well.purpose
+        this.feature_type = well.feature_type
+        this.description = well.description
+        this.status = well.status
         this.level_measurements = well.level_measurements || []
         this.quality_measurements = well.quality_measurements || []
         this.yield_measurements = well.yield_measurements || []
