@@ -29,6 +29,19 @@ export const getWellByField = async (field: string, value: any): Promise<Well> =
   return well
 }
 
+export const getWellsByField = async (field: string, value: any): Promise<Well[]> => {
+  const wells = await load("wells")
+  const _wells = []
+  wells.forEach((_well, index) => {
+    if (_well[field] === value) {
+      _wells.push(new Well(_well))
+      return false
+    }
+    return true
+  })
+  return _wells
+}
+
 export const saveWellByField = async (
   queryField: string,
   queryFieldValue: any,

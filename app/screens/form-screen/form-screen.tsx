@@ -1,17 +1,19 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
 import { Picker } from "@react-native-picker/picker"
-import { Button, Header } from 'react-native-elements'
+import { Badge, Button, Header } from 'react-native-elements'
 import { TextInput, View, ScrollView, Text, processColor } from 'react-native'
 import { Formik } from 'formik'
-import { LineChart } from 'react-native-charts-wrapper'
 import { styles } from "../form-screen/styles"
-import { getWellByField, loadWells } from "../../models/well/well.store"
+import { getWellByField, saveWellByField } from "../../models/well/well.store"
 import { MeasurementType } from "../../models/well/well"
 import { loadTerms } from "../../models/well/term.store"
-import { metersToFeet } from "../../utils/convert"
 import { MeasurementChart } from "../../components/measurement-chart/measurement-chart"
+import { FormInput } from "../../components/form-input/form-input"
+import { styles as mapStyles } from "../../screens/map-screen/styles"
+import { save } from "../../utils/storage"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -20,14 +22,22 @@ export interface FormScreenProps {
 export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const { route, navigation } = props
   const [wellData, setWellData] = useState({} as any)
+  const [updatedWellData, setUpdatedWellData] = useState({} as any)
+  const [updated, setUpdated] = useState(false)
+  const [terms, setTerms] = useState({
+    organisation: []
+  } as any)
 
   const goToMapScreen = React.useMemo(() => () => props.navigation.pop(), [
     props.navigation,
   ])
 
   const loadWellData = async (measurementType?, selectedParameter?, selectedUnit?) => {
-    const _wellData = await getWellByField("id", route.params.wellName)
+    const _wellData = await getWellByField("pk", route.params.wellPk)
     setWellData(_wellData)
+    setUpdatedWellData(Object.assign({}, _wellData))
+    const _terms = await loadTerms()
+    setTerms(_terms)
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -53,73 +63,89 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     })()
   }, [])
 
+  const pickerForm = (term) => {
+    return <Picker
+      selectedValue={ '' }
+      style={ styles.PICKER_INPUT_STYLE }
+      onValueChange={(itemValue, itemIndex) => {
+      }}>
+      {
+        (typeof terms[term] !== "undefined")
+          ? terms[term].map((value, index) => {
+            const _key = Object.keys(value)[0]
+            const _name = value[_key]
+            return <Picker.Item key={ _key } label={ _name } value={ _name } />})
+          : <Picker.Item key={ "" } label={ "" } value={ "" } />
+      }
+    </Picker>
+  }
+
+  const formOnChange = (value, key) => {
+    updatedWellData[key] = value
+    setUpdated(true)
+    setUpdatedWellData(updatedWellData)
+  }
+
+  const submitForm = async () => {
+    updatedWellData.synced = false
+    await saveWellByField('pk', updatedWellData.pk, updatedWellData)
+    setUpdated(false)
+  }
+
   return (
-    <View>
+    <View style={{ height: "100%" }}>
       <Header
         placement="center"
         leftComponent={{ icon: "chevron-left", size: 30, color: "#fff", onPress: () => goToMapScreen() }}
         centerComponent={{ text: "View Record", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
       />
+      { updated ? <View style={[mapStyles.BOTTOM_VIEW, { zIndex: 99 } ]}>
+        <Button
+          title="Submit"
+          buttonStyle={{ width: "100%", backgroundColor: "rgb(241, 137, 3)"}}
+          onPress={submitForm}
+        />
+      </View> : <View></View>}
       <ScrollView style = { styles.CONTAINER }>
+        {!wellData.synced ? <Badge
+          status="error"
+          containerStyle={{ position: 'absolute', top: 10, left: 0 }}
+          value="Unsynced"
+        /> : <Badge
+          status="success"
+          containerStyle={{ position: 'absolute', top: 10, left: 0 }}
+          value="Synced"
+        />}
+        <Text style={ styles.LAST_UPDATE_TEXT }>Last update : { wellData.last_update }</Text>
         <Text style={ styles.FORM_HEADER }>GENERAL INFORMATION</Text>
-        <Text style={ styles.FORM_SUB_HEADER }>Identification</Text>
         <Formik
-          initialValues={{ original_id: route.params.wellName, status: '-', feature_type: '-', purpose: '-', description: '-' }}
+          initialValues={{ original_id: '-', status: '-', feature_type: '-', purpose: '-', description: '-' }}
           onSubmit={values => console.log(values)}
         >
-          {({ handleChange, handleBlur, handleSubmit, values }) => (
+          {({ handleChange, handleBlur, handleSubmit, setFieldValue }) => (
             <View>
-              <Text style={ styles.LABEL }>Original ID</Text>
-              <TextInput
-                onChangeText={handleChange('original_id')}
-                onBlur={handleBlur('original_id')}
-                value={wellData.id}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={ styles.LABEL }>Organisation</Text>
-              <TextInput
-                onChangeText={handleChange('organisation')}
-                onBlur={handleBlur('organisation')}
-                value={wellData.organisation}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={ styles.LABEL }>Name</Text>
-              <TextInput
-                onChangeText={handleChange('name')}
-                onBlur={handleBlur('name')}
-                value={wellData.name}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={styles.LABEL}>Status</Text>
-              <TextInput
-                onChangeText={handleChange('status')}
-                onBlur={handleBlur('status')}
-                value={wellData.status}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={styles.LABEL}>Feature type</Text>
-              <TextInput
-                onChangeText={handleChange('feature_type')}
-                onBlur={handleBlur('feature_type')}
-                value={wellData.featureType}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={ styles.LABEL }>Purpose</Text>
-              <TextInput
-                onChangeText={handleChange('purpose')}
-                onBlur={handleBlur('purpose')}
-                value={wellData.purpose}
-                style={ styles.TEXT_INPUT_STYLE }
-              />
-              <Text style={styles.LABEL}>Description</Text>
-              <TextInput
-                onChangeText={handleChange('description')}
-                onBlur={handleBlur('description')}
-                value={wellData.description}
-                multiline
-                style={ styles.TEXT_INPUT_STYLE }
-              />
+              <Text style={ styles.FORM_SUB_HEADER }>Identification</Text>
+              <FormInput key="organisation" value={ wellData.organisation } required options={ terms.organisation } title="Organisation"></FormInput>
+              <FormInput
+                key="original_id"
+                value={ wellData.id }
+                title="Original ID"
+                required
+                onChange={ (val) => formOnChange(val, "id") }></FormInput>
+              <FormInput key="name" required value={ wellData.name } title="Name" onChange={ val => formOnChange(val, "name")}></FormInput>
+              <FormInput key="feature_type" required value={ wellData.feature_type } options={ terms.termfeaturetype } title="Feature type" onChange={ val => formOnChange(val, "feature_type")}></FormInput>
+              <FormInput key="purpose" value={ wellData.purpose } options={ terms.termwellpurpose } title="Purpose" onChange={ val => formOnChange(val, "purpose")}></FormInput>
+              <FormInput key="status" value={ wellData.status } options={ terms.termwellstatus } title="Status" onChange={ val => formOnChange(val, "status")}></FormInput>
+              <FormInput key="description" value={ wellData.description } title="Description" multiline onChange={ val => formOnChange(val, "description")}></FormInput>
+
+              <Text style={ styles.FORM_SUB_HEADER }>Location</Text>
+              <FormInput key="latitude" value={ wellData.latitude } numeric required title="Latitude" onChange={ val => formOnChange(val, "latitude")}></FormInput>
+              <FormInput key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(val, "longitude")}></FormInput>
+              <FormInput key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
+              <FormInput key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
+              <FormInput key="country" value={ wellData.country } title="Country"></FormInput>
+              <FormInput key="address" value={ wellData.address } title="Address" multiline></FormInput>
             </View>
           )}
         </Formik>
@@ -154,6 +180,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
           }
         </View>
         <View style={{ height: 100 }}></View>
+
       </ScrollView>
     </View>
   )

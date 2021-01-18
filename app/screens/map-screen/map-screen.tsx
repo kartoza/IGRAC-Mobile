@@ -13,8 +13,9 @@ import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
 import { Api } from "../../services/api/api"
-import { loadWells, saveWells } from "../../models/well/well.store"
+import { getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
 import { saveTerms } from "../../models/well/term.store"
+import Well from "../../models/well/well"
 
 const mapViewRef = createRef()
 let SUBS = null
@@ -32,14 +33,14 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncMessage, setSyncMessage] = useState('')
   const [isViewRecord, setIsViewRecord] = useState(false)
-  const [selectedWell, setSelectedWell] = useState('')
+  const [selectedWell, setSelectedWell] = useState({} as Well)
   const [unsyncedData, setUnsyncedData] = useState([])
   const [syncProgress, setSyncProgress] = useState(0)
 
   useFocusEffect(
     React.useCallback(() => {
       const getUnsyncedData = async () => {
-        const _unsyncedData = await getUnsynced() || []
+        const _unsyncedData = await getWellsByField('synced', false) || []
         setUnsyncedData(_unsyncedData)
       }
       getUnsyncedData()
@@ -55,7 +56,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           longitude: data.longitude
         },
         title: data.id,
-        key: data.id
+        key: data.pk
       })
     })
     setMarkers(_markers)
@@ -87,7 +88,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const markerSelected = (marker) => {
-    setSelectedWell(marker.title)
+    wells.forEach((_well, index) => {
+      if (_well.pk === marker.key) {
+        setSelectedWell(_well)
+      }
+      return true
+    })
     setIsViewRecord(true)
   }
 
@@ -137,7 +143,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
   }
 
-  const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", { wellName: selectedWell }), [
+  const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", { wellPk: selectedWell.pk }), [
     props.navigation,
     selectedWell
   ])
@@ -292,7 +298,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         ? (
           <View style={ styles.MID_BOTTOM_CONTAINER }>
             <View style={ styles.MID_BOTTOM_CONTENTS }>
-              <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell }</Text>
+              { !selectedWell.synced ? <Badge
+                status="error"
+                containerStyle={{ position: 'absolute', top: 10, left: 10 }}
+                value="Unsynced"
+              /> : <View></View>}
+              <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell.id } </Text>
               <Button
                 title="View Record"
                 type="outline"
