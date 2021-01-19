@@ -132,24 +132,6 @@ export default class Well implements WellInterface {
       if (measurementType in this) {
         this[measurementType].push(measurementData)
       }
-      if (measurementData.id === "") { // New data
-        const unsynced = {
-          id: "",
-          time: measurementData.datetime,
-          parameter: measurementData.parameter,
-          methodology: measurementData.methodology || "",
-          value_id: "",
-          value_value: measurementData.value,
-          value_unit: measurementData.unit || "m"
-        }
-        await addUnsyncedData({
-          data: unsynced,
-          url: `/groundwater/api/well/${this.pk}/edit`,
-          method: 'POST',
-          wellPk: this.pk,
-          dataType: measurementType
-        })
-      }
     }
 
     constructor(well: WellInterface | any) {

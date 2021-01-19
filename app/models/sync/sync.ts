@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable quote-props */
 import Axios from "axios"
 import { delay } from "../../utils/delay"
 import { load, save } from "../../utils/storage"
 import Well, { MeasurementType } from "../well/well"
 import { Api } from "../../services/api/api"
-import { saveWells, loadWells } from "../well/well.store"
+import { saveWells, loadWells, getWellByField, getWellsByField, saveWellByField } from "../well/well.store"
 const { API_URL } = require("../../config/env")
 
 export interface SyncData {
@@ -119,6 +120,29 @@ export const pushUnsyncedData = async (unsyncedData: SyncData) => {
   })
 
   return syncResult
+}
+
+/**
+ * Push updated wells to remote server
+ */
+export const pushUnsyncedWells = async (wells: Well[] = []) => {
+  if (wells.length === 0) {
+    wells = await getWellsByField("synced", false)
+  }
+  const api = new Api()
+  await api.setup()
+  let status = true
+  wells.forEach(async (well, index) => {
+    const apiResult = await api.postWell(well)
+    if (apiResult.kind === "ok") {
+      await saveWellByField('pk', well.pk, apiResult.well)
+      return true
+    } else {
+      status = false
+      return false
+    }
+  })
+  return status
 }
 
 export const mergeWithSynced = async (wells: Well[]) => {
