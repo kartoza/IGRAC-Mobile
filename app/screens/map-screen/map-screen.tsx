@@ -8,7 +8,7 @@ import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
 import { styles } from "../map-screen/styles"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { getUnsynced, pushUnsyncedData, SyncResult, syncPullData } from "../../models/sync/sync"
+import { getUnsynced, pushUnsyncedData, SyncResult, syncPullData, pushUnsyncedWells } from "../../models/sync/sync"
 import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
@@ -75,10 +75,10 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       await saveWells(wells)
     }
     if (wells) {
+      setWells(wells)
       drawMarkers(wells)
       setIsViewRecord(false)
       setIsLoading(false)
-      setWells(wells)
     }
   }
 
@@ -150,7 +150,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", {
     wellPk: selectedWell.pk,
-    onGoBack: () => refreshMap()
+    onBackToMap: () => refreshMap()
   }), [
     props.navigation,
     selectedWell,
@@ -188,19 +188,20 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const syncUpdateWell = async() => {
     setSyncMessage("Updating well data")
-    await syncPullData(setSyncProgress, setSyncMessage)
+    await syncPullData(setSyncProgress, setSyncMessage, showError)
   }
 
   const pushUnsynced = async() => {
     const _unsyncedData = Object.assign([], unsyncedData)
-    let syncResult = {} as SyncResult
+    let syncResult = true
     for (let i = 0; i < _unsyncedData.length; i++) {
       setSyncMessage(`${i + 1} records of ${unsyncedData.length} are synced`)
-      syncResult = await pushUnsyncedData(_unsyncedData[i])
-      if (!syncResult.synced) {
+      syncResult = await pushUnsyncedWells([_unsyncedData[i]])
+      if (!syncResult) {
         showError("One of the data can't be synchronized")
         break
       }
+      unsyncedData[i].synced = true
       setSyncProgress((i + 1) / unsyncedData.length)
     }
     setUnsyncedData(await getUnsynced())
@@ -226,6 +227,9 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     await delay(250)
     setSyncMessage('')
     setIsSyncing(false)
+    setMarkers([])
+    setSelectedWell(null)
+    await getWells()
     setSyncProgress(0)
   }
 

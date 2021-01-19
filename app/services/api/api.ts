@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import { ApisauceInstance, create, ApiResponse } from "apisauce"
 import { getGeneralApiProblem } from "./api-problem"
 import { ApiConfig, DEFAULT_API_CONFIG } from "./api-config"
 import * as Types from "./api.types"
 import { load } from "../../utils/storage"
 import Well, { WellInterface } from "../../models/well/well"
-import { raw } from "@storybook/react-native"
+import { loadTerms } from "../../models/well/term.store"
 
 /**
  * Manages all requests to the API.
@@ -146,6 +147,88 @@ export class Api {
     try {
       const raw = response.data
       return { kind: "ok", well: new Well({}).convertFromMinimizedData(raw.wells[0]) }
+    } catch {
+      return { kind: "bad-data" }
+    }
+  }
+
+  /**
+   * Parse well data to post data
+   */
+  parseWell(well: Well, terms: any): {} {
+    const postData = {
+      general_information: {},
+      level_measurement: [],
+      quality_measurement: [],
+      yield_measurement: []
+    }
+    const parseMeasurementData = (measurementType, postType) => {
+      well[measurementType].forEach(measurementData => {
+        postData[postType].push({
+          id: measurementData.id,
+          time: measurementData.datetime,
+          parameter: measurementData.parameter,
+          methodology: measurementData.methodology,
+          value_value: measurementData.value,
+          value_unit: measurementData.unit
+        })
+      })
+    }
+    const getTermId = (termValue, termKey) => {
+      let id = ""
+      terms[termKey].forEach(_term => {
+        if (_term[Object.keys(_term)[0]] === termValue) {
+          id = Object.keys(_term)[0]
+          return false
+        }
+        return true
+      })
+      return id
+    }
+    postData.general_information = {
+      original_id: well.id,
+      name: well.name,
+      feature_type: getTermId(well.feature_type, 'termfeaturetype'),
+      purpose: getTermId(well.purpose, 'termwellpurpose'),
+      status: getTermId(well.status, 'termwellstatus'),
+      description: well.description,
+      latitude: well.latitude,
+      longitude: well.longitude,
+      ground_surface_elevation_value: well.ground_surface_elevation,
+      ground_surface_elevation_unit: "m",
+      top_borehole_elevation_value: well.top_borehole_elevation,
+      top_borehole_elevation_unit: "m",
+      country: well.country,
+      address: well.address
+    }
+    parseMeasurementData('level_measurements', 'level_measurement')
+    parseMeasurementData('yield_measurements', 'yield_measurement')
+    parseMeasurementData('quality_measurements', 'quality_measurement')
+    return postData
+  }
+
+  /**
+   * Post a single well
+   */
+  async postWell(well: Well): Promise<Types.GetWellResult> {
+    // make the api call
+    const terms = await loadTerms()
+    const postData = this.parseWell(well, terms)
+    const url = `/groundwater/api/well/minimized/${well.pk}/edit`
+    const response: ApiResponse<any> = await this.apisauce.put(
+      url,
+      postData
+    )
+
+    // the typical ways to die when calling an api
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    // transform the data into the format we are expecting
+    try {
+      return { kind: "ok", well: new Well({}).convertFromMinimizedData(response.data) }
     } catch {
       return { kind: "bad-data" }
     }

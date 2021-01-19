@@ -13,7 +13,6 @@ import { loadTerms } from "../../models/well/term.store"
 import { MeasurementChart } from "../../components/measurement-chart/measurement-chart"
 import { FormInput } from "../../components/form-input/form-input"
 import { styles as mapStyles } from "../../screens/map-screen/styles"
-import { save } from "../../utils/storage"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -50,7 +49,10 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     measurementType: measurementType,
     selectedParameter: selectedParameter,
     selectedUnit: selectedUnit,
-    onGoBack: (parameter, unit) => refresh(measurementType, parameter, unit)
+    onGoBack: (parameter, unit) => {
+      setUpdated(true)
+      refresh(measurementType, parameter, unit)
+    }
   }), [
     props.navigation,
     wellData,
@@ -63,23 +65,6 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     })()
   }, [])
 
-  const pickerForm = (term) => {
-    return <Picker
-      selectedValue={ '' }
-      style={ styles.PICKER_INPUT_STYLE }
-      onValueChange={(itemValue, itemIndex) => {
-      }}>
-      {
-        (typeof terms[term] !== "undefined")
-          ? terms[term].map((value, index) => {
-            const _key = Object.keys(value)[0]
-            const _name = value[_key]
-            return <Picker.Item key={ _key } label={ _name } value={ _name } />})
-          : <Picker.Item key={ "" } label={ "" } value={ "" } />
-      }
-    </Picker>
-  }
-
   const formOnChange = (value, key) => {
     updatedWellData[key] = value
     setUpdated(true)
@@ -90,7 +75,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     updatedWellData.synced = false
     await saveWellByField('pk', updatedWellData.pk, updatedWellData)
     setUpdated(false)
-    route.params.onGoBack()
+    route.params.onBackToMap()
     props.navigation.goBack()
   }
 
