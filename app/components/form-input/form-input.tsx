@@ -20,6 +20,7 @@ export interface FormInputProps {
 export function FormInput(props: FormInputProps) {
   const [inputValue, setInputValue] = useState("")
   const [unitValue, setUnitValue] = useState("")
+  const [updated, setUpdated] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -43,6 +44,7 @@ export function FormInput(props: FormInputProps) {
       outputValue = value
     }
     if (typeof props.onChange !== "undefined") {
+      setUpdated(true)
       props.onChange(outputValue)
     }
   }
@@ -75,7 +77,7 @@ export function FormInput(props: FormInputProps) {
   }
   return (
     <View>
-      <Text style={ props.required ? styles.LABEL_IMPORTANT : styles.LABEL }> { props.title }</Text>
+      <Text style={[(props.required ? styles.LABEL_IMPORTANT : styles.LABEL), (updated ? { backgroundColor: "rgba(189, 202, 18, 0.2)"}:{}) ]}> { props.title }</Text>
       <View style={props.units ? styles.MULTIPLE_INPUT_STYLE : styles.TEXT_INPUT_STYLE}>
         { props.options
           ? pickerForm(props.options)

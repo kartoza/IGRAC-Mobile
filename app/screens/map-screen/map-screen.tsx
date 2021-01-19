@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createRef } from "react"
+import React, { useState, useEffect, createRef, useCallback } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import { SearchBar, Button, Icon, Badge } from 'react-native-elements'
@@ -82,6 +82,11 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
   }
 
+  const refreshMap = useCallback(async () => {
+    setMarkers([])
+    await getWells()
+  }, [])
+
   const onRegionChange = async (region) => {
     // setCurrentRegion(region)
     // console.log('Region changed', region)
@@ -143,9 +148,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
   }
 
-  const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", { wellPk: selectedWell.pk }), [
+  const viewRecord = React.useMemo(() => () => props.navigation.navigate("form", {
+    wellPk: selectedWell.pk,
+    onGoBack: () => refreshMap()
+  }), [
     props.navigation,
-    selectedWell
+    selectedWell,
+    refreshMap
   ])
 
   const submitSearch = async() => {

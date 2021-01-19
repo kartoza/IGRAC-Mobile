@@ -90,6 +90,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     updatedWellData.synced = false
     await saveWellByField('pk', updatedWellData.pk, updatedWellData)
     setUpdated(false)
+    route.params.onGoBack()
+    props.navigation.goBack()
   }
 
   return (

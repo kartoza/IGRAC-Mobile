@@ -39,7 +39,8 @@ const EMPTY_CHART_CONTAINER: ViewStyle = {
 const LABEL: TextStyle = {
   color: '#000000',
   fontSize: 13,
-  marginTop: 10
+  marginTop: 10,
+  paddingBottom: 2
 }
 
 const LABEL_IMPORTANT: TextStyle = {
