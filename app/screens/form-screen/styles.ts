@@ -39,7 +39,13 @@ const EMPTY_CHART_CONTAINER: ViewStyle = {
 const LABEL: TextStyle = {
   color: '#000000',
   fontSize: 13,
-  marginTop: 10
+  marginTop: 10,
+  paddingBottom: 2
+}
+
+const LABEL_IMPORTANT: TextStyle = {
+  ...LABEL,
+  fontWeight: 'bold'
 }
 
 const REQUIRED_LABEL: TextStyle = {
@@ -87,6 +93,13 @@ const SUBMIT_BUTTON: ViewStyle = {
   marginTop: 10
 }
 
+const LAST_UPDATE_TEXT: TextStyle = {
+  marginTop: 10,
+  fontSize: 12,
+  textAlign: 'right',
+  fontStyle: 'italic'
+}
+
 export const styles = StyleSheet.create({
   CHART_CONTAINER,
   CHART_LABEL,
@@ -96,6 +109,8 @@ export const styles = StyleSheet.create({
   FORM_SUB_HEADER,
   HEADER_CONTAINER,
   LABEL,
+  LABEL_IMPORTANT,
+  LAST_UPDATE_TEXT,
   MULTIPLE_INPUT_STYLE,
   PICKER_INPUT_STYLE,
   PICKER_SM_INPUT_STYLE,
