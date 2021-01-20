@@ -5,10 +5,8 @@ import { delay } from "../../utils/delay"
 import { load, save } from "../../utils/storage"
 import Well, { MeasurementType } from "../well/well"
 import { Api } from "../../services/api/api"
-import { saveWells, loadWells, getWellByField, getWellsByField, saveWellByField } from "../well/well.store"
-import { GetWellResult } from "../../services/api"
-import { any } from "ramda"
-const { API_URL } = require("../../config/env")
+import { saveWells, loadWells, getWellsByField, saveWellByField } from "../well/well.store"
+import { API_URL } from "react-native-dotenv"
 
 export interface SyncData {
   id?: string | number,

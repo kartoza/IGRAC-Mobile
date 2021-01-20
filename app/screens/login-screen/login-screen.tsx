@@ -4,9 +4,9 @@ import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import LoginScreen from "react-native-login-screen"
 import { save, load } from "../../utils/storage"
+import { API_URL } from "react-native-dotenv"
 
 const defaultImage = require("../../components/wallpaper/igrac.png")
-const { API_URL } = require("../../config/env")
 
 export interface LoginScreenProps {
     navigation: NativeStackNavigationProp<ParamListBase>
