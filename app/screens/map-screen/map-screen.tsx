@@ -8,14 +8,15 @@ import Geolocation from '@react-native-community/geolocation'
 import MapView, { Marker } from "react-native-maps"
 import { styles } from "../map-screen/styles"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
-import { getUnsynced, pushUnsyncedData, SyncResult, syncPullData, pushUnsyncedWells } from "../../models/sync/sync"
+import { getUnsynced, syncPullData, pushUnsyncedWells } from "../../models/sync/sync"
 import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
 import { Api } from "../../services/api/api"
-import { getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
+import { createNewWell, getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
 import { saveTerms } from "../../models/well/term.store"
 import Well from "../../models/well/well"
+import { WellStatusBadge } from "../../components/well/well-status-badge"
 
 const mapViewRef = createRef()
 let SUBS = null
@@ -28,11 +29,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const { navigation } = props
   const [wells, setWells] = useState([])
   const [markers, setMarkers] = useState([])
+  const [newRecordMarker, setNewRecordMarker] = useState(null)
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncMessage, setSyncMessage] = useState('')
   const [isViewRecord, setIsViewRecord] = useState(false)
+  const [isAddRecord, setIsAddRecord] = useState(false)
   const [selectedWell, setSelectedWell] = useState({} as Well)
   const [unsyncedData, setUnsyncedData] = useState([])
   const [syncProgress, setSyncProgress] = useState(0)
@@ -75,6 +78,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       await saveWells(wells)
     }
     if (wells) {
+      setNewRecordMarker(null)
+      setIsAddRecord(false)
       setWells(wells)
       drawMarkers(wells)
       setIsViewRecord(false)
@@ -93,6 +98,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const markerSelected = (marker) => {
+    if (isAddRecord) return
     wells.forEach((_well, index) => {
       if (_well.pk === marker.key) {
         setSelectedWell(_well)
@@ -107,6 +113,11 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const mapSelected = async (e) => {
+    if (isAddRecord) {
+      setNewRecordMarker({
+        coordinate: e.nativeEvent.coordinate
+      })
+    }
     markerDeselected()
   }
 
@@ -117,12 +128,14 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const watchLocation = () => {
     Geolocation.getCurrentPosition(
       position => {
-        mapViewRef.current.animateCamera({
-          center: {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          }
-        })
+        if (mapViewRef) {
+          mapViewRef.current.animateCamera({
+            center: {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }
+          })
+        }
       },
       error => {
         console.log(error)
@@ -156,6 +169,14 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     selectedWell,
     refreshMap
   ])
+
+  const addNewRecord = async () => {
+    const newWell = await createNewWell(newRecordMarker.coordinate.latitude, newRecordMarker.coordinate.longitude)
+    props.navigation.navigate("form", {
+      wellPk: newWell.pk,
+      onBackToMap: () => refreshMap()
+    })
+  }
 
   const submitSearch = async() => {
     setIsLoading(true)
@@ -199,12 +220,15 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       syncResult = await pushUnsyncedWells([_unsyncedData[i]])
       if (!syncResult) {
         showError("One of the data can't be synchronized")
-        break
+        return unsyncedData
+      } else {
+        unsyncedData[i].synced = true
+        setSyncProgress((i + 1) / unsyncedData.length)
       }
-      unsyncedData[i].synced = true
-      setSyncProgress((i + 1) / unsyncedData.length)
     }
-    setUnsyncedData(await getUnsynced())
+    const currentUnsyncedData = await getUnsynced()
+    setUnsyncedData(currentUnsyncedData)
+    return currentUnsyncedData
   }
 
   const syncData = async() => {
@@ -218,19 +242,20 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
     markerDeselected()
     setIsSyncing(true)
-
-    if (unsyncedData.length > 0) {
-      await pushUnsynced()
+    let currentUnsyncedData = unsyncedData
+    if (currentUnsyncedData.length > 0) {
+      currentUnsyncedData = await pushUnsynced()
     }
-    await syncUpdateWell()
-
-    await delay(250)
-    setSyncMessage('')
+    if (currentUnsyncedData.length === 0) {
+      await syncUpdateWell()
+      await delay(250)
+      setSyncMessage('')
+      setMarkers([])
+      setSelectedWell(null)
+      await getWells()
+      setSyncProgress(0)
+    }
     setIsSyncing(false)
-    setMarkers([])
-    setSelectedWell(null)
-    await getWells()
-    setSyncProgress(0)
   }
 
   useEffect(() => {
@@ -280,6 +305,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
             />
           )
         })}
+        {newRecordMarker
+          ? <Marker
+            key={'newRecord'}
+            coordinate={newRecordMarker.coordinate}
+            title={'New Record'}
+            pinColor={'orange'}
+          /> : null }
       </MapView>
 
       <Modal
@@ -311,11 +343,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         ? (
           <View style={ styles.MID_BOTTOM_CONTAINER }>
             <View style={ styles.MID_BOTTOM_CONTENTS }>
-              { !selectedWell.synced ? <Badge
-                status="error"
-                containerStyle={{ position: 'absolute', top: 10, left: 10 }}
-                value="Unsynced"
-              /> : <View></View>}
+              <WellStatusBadge well={selectedWell} containerStyle={{ position: 'absolute', top: 10, left: 10 }}></WellStatusBadge>
               <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell.id } </Text>
               <Button
                 title="View Record"
@@ -330,16 +358,47 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           </View>
         ) : <View></View>}
 
+      { isAddRecord
+        ? (
+          <View style={styles.MID_BOTTOM_CONTAINER}>
+            <View style={styles.MID_BOTTOM_CONTENTS}>
+              <Text style={styles.MID_BOTTOM_TEXT}>Select location on the map</Text>
+              <View style={{ flexDirection: "row"}}>
+                <Button
+                  title="Cancel"
+                  type="outline"
+                  raised
+                  buttonStyle={ styles.MID_BOTTOM_BUTTON }
+                  titleStyle={{ color: "#ffffff" }}
+                  containerStyle={{ width: "30%" }}
+                  onPress={ () => { setNewRecordMarker(null); setIsAddRecord(false) }}
+                />
+                { newRecordMarker ? <Button
+                  title="Add"
+                  type="outline"
+                  raised
+                  buttonStyle={ styles.MID_BOTTOM_BUTTON }
+                  titleStyle={{ color: "#ffffff" }}
+                  containerStyle={{ width: "30%", marginLeft: 10 }}
+                  onPress={ () => { addNewRecord() }}
+                /> : null }
+              </View>
+            </View>
+          </View>
+        ) : null
+      }
+
       <View style={ styles.BOTTOM_VIEW }>
         <Button
           icon={
             <Icon
-              name="user-circle"
+              name="plus-circle"
               type="font-awesome"
               size={25}
               color="rgb(196, 196, 196)"
             ></Icon>
           }
+          onPress={ () => setIsAddRecord(true) }
           buttonStyle={ styles.USER_BUTTON }
           containerStyle={ styles.USER_BUTTON_CONTAINER }
           TouchableComponent={TouchableWithoutFeedback}

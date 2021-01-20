@@ -13,6 +13,7 @@ import { loadTerms } from "../../models/well/term.store"
 import { MeasurementChart } from "../../components/measurement-chart/measurement-chart"
 import { FormInput } from "../../components/form-input/form-input"
 import { styles as mapStyles } from "../../screens/map-screen/styles"
+import { WellStatusBadge } from "../../components/well/well-status-badge"
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -75,7 +76,9 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     updatedWellData.synced = false
     await saveWellByField('pk', updatedWellData.pk, updatedWellData)
     setUpdated(false)
-    route.params.onBackToMap()
+    if (route.params.onBackToMap) {
+      route.params.onBackToMap()
+    }
     props.navigation.goBack()
   }
 
@@ -95,15 +98,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
         />
       </View> : <View></View>}
       <ScrollView style = { styles.CONTAINER }>
-        {!wellData.synced ? <Badge
-          status="error"
-          containerStyle={{ position: 'absolute', top: 10, left: 0 }}
-          value="Unsynced"
-        /> : <Badge
-          status="success"
-          containerStyle={{ position: 'absolute', top: 10, left: 0 }}
-          value="Synced"
-        />}
+        <WellStatusBadge well={wellData}></WellStatusBadge>
         <Text style={ styles.LAST_UPDATE_TEXT }>Last update : { wellData.last_update }</Text>
         <Text style={ styles.FORM_HEADER }>GENERAL INFORMATION</Text>
         <Formik

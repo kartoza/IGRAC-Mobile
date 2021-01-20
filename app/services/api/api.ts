@@ -160,7 +160,8 @@ export class Api {
       general_information: {},
       level_measurement: [],
       quality_measurement: [],
-      yield_measurement: []
+      yield_measurement: [],
+      well_metadata: {}
     }
     const parseMeasurementData = (measurementType, postType) => {
       well[measurementType].forEach(measurementData => {
@@ -176,6 +177,10 @@ export class Api {
     }
     const getTermId = (termValue, termKey) => {
       let id = ""
+      // if value undefined, then return the first value
+      if (typeof termValue === "undefined") {
+        return Object.keys(terms[termKey][0])[0]
+      }
       terms[termKey].forEach(_term => {
         if (_term[Object.keys(_term)[0]] === termValue) {
           id = Object.keys(_term)[0]
@@ -187,24 +192,54 @@ export class Api {
     }
     postData.general_information = {
       original_id: well.id,
-      name: well.name,
-      feature_type: getTermId(well.feature_type, 'termfeaturetype'),
-      purpose: getTermId(well.purpose, 'termwellpurpose'),
-      status: getTermId(well.status, 'termwellstatus'),
-      description: well.description,
+      name: well.name || "",
+      feature_type: getTermId(well.feature_type, 'termfeaturetype') || "",
+      purpose: getTermId(well.purpose, 'termwellpurpose') || "",
+      status: getTermId(well.status, 'termwellstatus') || "",
+      description: well.description || "",
       latitude: well.latitude,
       longitude: well.longitude,
       ground_surface_elevation_value: well.ground_surface_elevation,
       ground_surface_elevation_unit: "m",
       top_borehole_elevation_value: well.top_borehole_elevation,
       top_borehole_elevation_unit: "m",
-      country: well.country,
-      address: well.address
+      country: well.country || "",
+      address: well.address || ""
+    }
+    postData.well_metadata = {
+      organisation: getTermId(well.organisation, 'organisation') || ""
     }
     parseMeasurementData('level_measurements', 'level_measurement')
     parseMeasurementData('yield_measurements', 'yield_measurement')
     parseMeasurementData('quality_measurements', 'quality_measurement')
     return postData
+  }
+
+  /**
+   * Update a single well
+   */
+  async putWell(well: Well): Promise<Types.GetWellResult> {
+    // make the api call
+    const terms = await loadTerms()
+    const postData = this.parseWell(well, terms)
+    const url = `/groundwater/api/well/minimized/${well.pk}/edit`
+    const response: ApiResponse<any> = await this.apisauce.put(
+      url,
+      postData
+    )
+
+    // the typical ways to die when calling an api
+    if (!response.ok) {
+      const problem = getGeneralApiProblem(response)
+      if (problem) return problem
+    }
+
+    // transform the data into the format we are expecting
+    try {
+      return { kind: "ok", well: new Well({}).convertFromMinimizedData(response.data) }
+    } catch {
+      return { kind: "bad-data" }
+    }
   }
 
   /**
@@ -214,8 +249,8 @@ export class Api {
     // make the api call
     const terms = await loadTerms()
     const postData = this.parseWell(well, terms)
-    const url = `/groundwater/api/well/minimized/${well.pk}/edit`
-    const response: ApiResponse<any> = await this.apisauce.put(
+    const url = `/groundwater/api/well/minimized/create`
+    const response: ApiResponse<any> = await this.apisauce.post(
       url,
       postData
     )

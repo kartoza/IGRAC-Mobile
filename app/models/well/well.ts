@@ -34,6 +34,7 @@ export interface WellInterface {
   level_measurements?: Measurement[]
   quality_measurements?: Measurement[]
   yield_measurements?: Measurement[]
+  new_data?: boolean
 }
 
 export interface Measurement {
@@ -71,6 +72,7 @@ export default class Well implements WellInterface {
     level_measurements: Measurement[]
     quality_measurements: Measurement[]
     yield_measurements: Measurement[]
+    new_data?: boolean
 
     convertFromMinimizedData = (minimizedData) => {
       this.pk = minimizedData.pk
@@ -88,6 +90,7 @@ export default class Well implements WellInterface {
       this.ground_surface_elevation = minimizedData.gse
       this.top_borehole_elevation = minimizedData.tbe
       this.synced = true
+      this.new_data = false
 
       try {
         const deviceTimeZone = RNLocalize.getTimeZone()
@@ -150,6 +153,7 @@ export default class Well implements WellInterface {
         this.address = well.address
         this.last_update = well.last_update
         this.synced = well.synced
+        this.new_data = well.new_data
         this.ground_surface_elevation = well.ground_surface_elevation
         this.top_borehole_elevation = well.top_borehole_elevation
         this.level_measurements = well.level_measurements || []
