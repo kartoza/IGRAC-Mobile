@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import Well, { MeasurementType, Measurement } from "./well"
-import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField } from "./well.store"
+import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField, createNewWell } from "./well.store"
 
 const minimizedData = {
   id: "1",
@@ -85,4 +85,14 @@ it("updates well measurement data", async () => {
   )
   const updatedWell = await getWellByField('pk', minimizedData.pk)
   expect(updatedWell.level_measurements[1].datetime).toBe(measurementData.datetime)
+})
+
+it("creates new well", async () => {
+  const wells = await loadWells()
+  wells.push(new Well({ pk: -1, latitude: 0, longitude: 0, new_data: true }))
+  wells.push(new Well({ pk: -3, latitude: 0, longitude: 0, new_data: true }))
+  await saveWells(wells)
+  const newWell = await createNewWell(0, 0)
+  expect(newWell.pk).toBe(-4)
+  expect(newWell.new_data).toBe(true)
 })

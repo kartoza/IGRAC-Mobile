@@ -6,6 +6,8 @@ import { load, save } from "../../utils/storage"
 import Well, { MeasurementType } from "../well/well"
 import { Api } from "../../services/api/api"
 import { saveWells, loadWells, getWellByField, getWellsByField, saveWellByField } from "../well/well.store"
+import { GetWellResult } from "../../services/api"
+import { any } from "ramda"
 const { API_URL } = require("../../config/env")
 
 export interface SyncData {
@@ -132,16 +134,24 @@ export const pushUnsyncedWells = async (wells: Well[] = []) => {
   const api = new Api()
   await api.setup()
   let status = true
-  wells.forEach(async (well, index) => {
-    const apiResult = await api.postWell(well)
+  for (const well of wells) {
+    const wellPk = well.pk
+    let apiResult = {} as any
+    if (well.new_data) {
+      well.pk = ""
+      apiResult = await api.postWell(well)
+    } else {
+      apiResult = await api.putWell(well)
+    }
     if (apiResult.kind === "ok") {
-      await saveWellByField('pk', well.pk, apiResult.well)
+      await saveWellByField('pk', wellPk, apiResult.well)
+      status = true
       return true
     } else {
       status = false
       return false
     }
-  })
+  }
   return status
 }
 

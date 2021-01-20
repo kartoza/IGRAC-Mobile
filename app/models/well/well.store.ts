@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import { load, save } from "../../utils/storage"
 import Well, { WellInterface } from "./well"
 
@@ -64,4 +65,25 @@ export const updateWellMeasurement = async (
   const well = await getWellByField("pk", wellPk)
   await well.addMeasurementData(measurementType, measurementData)
   await saveWellByField("pk", well.pk, well)
+}
+
+export const createNewWell = async (latitude: number, longitude: number) => {
+  const newWells = await getWellsByField('new_data', true)
+  let newPk = -1
+  if (newWells.length > 0) {
+    // sort by pk
+    newWells.sort((a, b) => a.pk - b.pk)
+    newPk = newWells[0].pk - 1
+  }
+  const newWell = new Well({
+    pk: newPk,
+    latitude: latitude,
+    longitude: longitude,
+    new_data: true,
+    datetime: Math.floor(Date.now() / 1000)
+  })
+  const allWells = await loadWells()
+  allWells.push(newWell)
+  await saveWells(allWells)
+  return newWell
 }
