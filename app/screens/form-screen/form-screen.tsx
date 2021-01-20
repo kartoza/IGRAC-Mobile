@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
 import { Button, Header } from 'react-native-elements'
-import { View, ScrollView, Text } from 'react-native'
+import { View, ScrollView, Text, Alert } from 'react-native'
 import { Formik } from 'formik'
 import { styles } from "../form-screen/styles"
 import { getWellByField, saveWellByField } from "../../models/well/well.store"
@@ -80,14 +80,31 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     await setUpdatedWellData({ ...updatedWellData, [key]: value })
   }
 
+  const checkRequiredFields = () => {
+    return (
+      updatedWellData.id &&
+      updatedWellData.name &&
+      updatedWellData.longitude &&
+      updatedWellData.latitude
+    )
+  }
+
   const submitForm = async () => {
-    updatedWellData.synced = false
-    await saveWellByField('pk', updatedWellData.pk, updatedWellData)
-    setUpdated(false)
-    if (route.params.onBackToMap) {
-      route.params.onBackToMap()
+    const checked = checkRequiredFields()
+    if (checked) {
+      updatedWellData.synced = false
+      await saveWellByField('pk', updatedWellData.pk, updatedWellData)
+      setUpdated(false)
+      if (route.params.onBackToMap) {
+        route.params.onBackToMap()
+      }
+      props.navigation.goBack()
+    } else {
+      Alert.alert(
+        "Error",
+        "Missing required value"
+      )
     }
-    props.navigation.goBack()
   }
 
   return (
