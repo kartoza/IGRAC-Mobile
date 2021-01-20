@@ -73,13 +73,13 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         value: dataValue,
         unit: dataUnit || ""
       }
-      await updateWellMeasurement(
-        wellId,
-        measurementData,
-        route.params.measurementType)
-      await delay(500).then(() => console.log('Processed'))
+      // await updateWellMeasurement(
+      //   wellId,
+      //   measurementData,
+      //   route.params.measurementType)
+      await delay(100).then(() => console.log('Processed'))
       setLoading(false)
-      route.params.onGoBack(data.parameter, dataUnit)
+      route.params.onGoBack(measurementData)
       props.navigation.goBack()
     } else {
       Alert.alert(

@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
-import { Picker } from "@react-native-picker/picker"
-import { Badge, Button, Header } from 'react-native-elements'
-import { TextInput, View, ScrollView, Text, processColor } from 'react-native'
+import { Button, Header } from 'react-native-elements'
+import { View, ScrollView, Text } from 'react-native'
 import { Formik } from 'formik'
 import { styles } from "../form-screen/styles"
 import { getWellByField, saveWellByField } from "../../models/well/well.store"
-import { MeasurementType } from "../../models/well/well"
+import Well, { MeasurementType } from "../../models/well/well"
 import { loadTerms } from "../../models/well/term.store"
 import { MeasurementChart } from "../../components/measurement-chart/measurement-chart"
 import { FormInput } from "../../components/form-input/form-input"
@@ -22,7 +21,8 @@ export interface FormScreenProps {
 export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const { route, navigation } = props
   const [wellData, setWellData] = useState({} as any)
-  const [updatedWellData, setUpdatedWellData] = useState({} as any)
+  const [measurementData, setMeasurementData] = useState({} as any)
+  const [updatedWellData, setUpdatedWellData] = useState({} as Well)
   const [updated, setUpdated] = useState(false)
   const [terms, setTerms] = useState({
     organisation: []
@@ -32,17 +32,17 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     props.navigation,
   ])
 
-  const loadWellData = async (measurementType?, selectedParameter?, selectedUnit?) => {
+  const loadWellData = async () => {
     const _wellData = await getWellByField("pk", route.params.wellPk)
     setWellData(_wellData)
-    setUpdatedWellData(Object.assign({}, _wellData))
+    setMeasurementData({
+      level_measurements: _wellData.level_measurements,
+      yield_measurements: _wellData.yield_measurements,
+      quality_measurements: _wellData.quality_measurements
+    })
+    setUpdatedWellData(new Well(Object.assign({}, _wellData)))
     const _terms = await loadTerms()
     setTerms(_terms)
-  }
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const refresh = async (measurementType, selectedParameter, selectedUnit) => {
-    loadWellData(measurementType, selectedParameter, selectedUnit)
   }
 
   const goToMeasurementFormScreen = React.useMemo(() => (measurementType, selectedParameter?, selectedUnit?) => props.navigation.navigate("measurementForm", {
@@ -50,14 +50,22 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     measurementType: measurementType,
     selectedParameter: selectedParameter,
     selectedUnit: selectedUnit,
-    onGoBack: (parameter, unit) => {
+    onGoBack: async (_measurementData) => {
       setUpdated(true)
-      refresh(measurementType, parameter, unit)
+      await updatedWellData.addMeasurementData(measurementType, _measurementData)
+      await setMeasurementData({
+        level_measurements: [],
+        yield_measurements: [],
+        quality_measurements: []
+      })
+      await setMeasurementData({ ...measurementData, [measurementType]: updatedWellData[measurementType] })
+      await setUpdatedWellData({ ...updatedWellData })
     }
   }), [
     props.navigation,
     wellData,
-    refresh
+    updatedWellData,
+    measurementData
   ])
 
   useEffect(() => {
@@ -66,10 +74,10 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     })()
   }, [])
 
-  const formOnChange = (value, key) => {
+  const formOnChange = async (value, key) => {
     updatedWellData[key] = value
-    setUpdated(true)
-    setUpdatedWellData(updatedWellData)
+    await setUpdated(true)
+    await setUpdatedWellData({ ...updatedWellData, [key]: value })
   }
 
   const submitForm = async () => {
@@ -135,30 +143,30 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
           <Text style={ styles.FORM_HEADER }>GROUNDWATER LEVEL</Text>
           { typeof wellData.level_measurements !== "undefined"
             ? <MeasurementChart
-              measurementData={wellData.level_measurements}
+              measurementData={measurementData.level_measurements}
               measurementType={MeasurementType.LevelMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.LevelMeasurements, selectedParameter, selectedUnit)}
-            ></MeasurementChart> : <View></View>
+            ></MeasurementChart> : null
           }
         </View>
         <View style={ styles.CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>GROUNDWATER QUALITY</Text>
           { typeof wellData.quality_measurements !== "undefined"
             ? <MeasurementChart
-              measurementData={wellData.quality_measurements}
+              measurementData={measurementData.quality_measurements}
               measurementType={MeasurementType.QualityMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.QualityMeasurements, selectedParameter, selectedUnit)}
-            ></MeasurementChart> : <View></View>
+            ></MeasurementChart> : null
           }
         </View>
         <View style={ styles.CHART_CONTAINER }>
           <Text style={ styles.FORM_HEADER }>ABSTRACTION / DISCHARGE</Text>
           { typeof wellData.yield_measurements !== "undefined"
             ? <MeasurementChart
-              measurementData={wellData.yield_measurements}
+              measurementData={measurementData.yield_measurements}
               measurementType={MeasurementType.YieldMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.YieldMeasurements, selectedParameter, selectedUnit)}
-            ></MeasurementChart> : <View></View>
+            ></MeasurementChart> : null
           }
         </View>
         <View style={{ height: 100 }}></View>
