@@ -37,6 +37,8 @@ jobs:
       - name: Build Android Release
         run: |
           cd android && ./gradlew assembleRelease
+        env:
+          API_URL: ${{ secrets.API_URL }}
       - name: Upload Artifact
         uses: actions/upload-artifact@v1
         with:

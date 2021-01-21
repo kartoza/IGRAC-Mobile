@@ -6,7 +6,7 @@ import { load, save } from "../../utils/storage"
 import Well, { MeasurementType } from "../well/well"
 import { Api } from "../../services/api/api"
 import { saveWells, loadWells, getWellsByField, saveWellByField } from "../well/well.store"
-import { API_URL } from "react-native-dotenv"
+import { API_URL } from "@env"
 
 export interface SyncData {
   id?: string | number,
