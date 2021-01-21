@@ -1,4 +1,4 @@
-import { API_URL } from "react-native-dotenv"
+import { API_URL } from "@env"
 
 /**
  * The options used to configure the API.

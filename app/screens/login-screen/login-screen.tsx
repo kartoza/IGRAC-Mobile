@@ -4,7 +4,7 @@ import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import LoginScreen from "react-native-login-screen"
 import { save, load } from "../../utils/storage"
-import { API_URL } from "react-native-dotenv"
+import { API_URL } from "@env"
 
 const defaultImage = require("../../components/wallpaper/igrac.png")
 
@@ -32,6 +32,7 @@ export const LoginScreenPage: React.FunctionComponent<LoginScreenProps> = props 
     const formData = new FormData()
     formData.append('username', username)
     formData.append('password', password)
+    console.log(loginUrl)
     Axios.post(
       `${loginUrl}`,
       formData
