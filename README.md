@@ -2,7 +2,7 @@
 
 ![Install dependencies and run tests](https://github.com/kartoza/igrac-mobile/workflows/Install%20dependencies%20and%20run%20tests/badge.svg?branch=main)
 
-Latest APK : https://nightly.link/kartoza/igrac-mobile/workflows/main/main
+Download the APK here : [Download](https://nightly.link/kartoza/igrac-mobile/workflows/main/main/app-release.apk.zip)
 
 ## :clipboard: Documentation
 
