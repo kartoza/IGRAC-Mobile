@@ -17,13 +17,14 @@ export const saveWells = async (wells) => {
 export const getWellByField = async (field: string, value: any): Promise<Well> => {
   const wells = await load("wells")
   let well = null
-  wells.forEach((_well, index) => {
-    if (_well[field] === value) {
-      well = _well
-      return false
+  if (wells) {
+    for (const index in wells) {
+      const _well = wells[index]
+      if (_well[field] === value) {
+        well = _well
+      }
     }
-    return true
-  })
+  }
   if (well) {
     return new Well(well)
   }
@@ -33,13 +34,14 @@ export const getWellByField = async (field: string, value: any): Promise<Well> =
 export const getWellsByField = async (field: string, value: any): Promise<Well[]> => {
   const wells = await load("wells")
   const _wells = []
-  wells.forEach((_well, index) => {
-    if (_well[field] === value) {
-      _wells.push(new Well(_well))
-      return false
+  if (wells) {
+    for (const index in wells) {
+      const _well = wells[index]
+      if (_well[field] === value) {
+        _wells.push(new Well(_well))
+      }
     }
-    return true
-  })
+  }
   return _wells
 }
 
@@ -48,13 +50,15 @@ export const saveWellByField = async (
   queryFieldValue: any,
   wellData: WellInterface) => {
   const wells = await load("wells")
-  wells.forEach((_well, index) => {
-    if (_well[queryField] === queryFieldValue) {
-      wells[index] = wellData
-      return false
+  if (wells) {
+    for (const index in wells) {
+      const _well = wells[index]
+      if (_well[queryField] === queryFieldValue) {
+        wells[index] = wellData
+        break
+      }
     }
-    return true
-  })
+  }
   await saveWells(wells)
 }
 
@@ -86,4 +90,24 @@ export const createNewWell = async (latitude: number, longitude: number) => {
   allWells.push(newWell)
   await saveWells(allWells)
   return newWell
+}
+
+export const clearTemporaryNewWells = async () => {
+  const wells = await loadWells()
+  const removedIndex = []
+  if (wells) {
+    for (const index in wells) {
+      const _well = wells[index]
+      if (_well.new_data === true && _well.synced === true) {
+        removedIndex.push(index)
+      }
+    }
+  }
+  if (removedIndex.length > 0) {
+    for (let i = removedIndex.length - 1; i >= 0; i--) {
+      wells.splice(removedIndex[i], 1)
+    }
+    await saveWells(wells)
+  }
+  return removedIndex.length > 0
 }

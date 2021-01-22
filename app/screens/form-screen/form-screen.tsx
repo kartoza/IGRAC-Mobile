@@ -151,8 +151,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <FormInput key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(val, "longitude")}></FormInput>
               <FormInput key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
               <FormInput key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
-              <FormInput key="country" value={ wellData.country } title="Country"></FormInput>
-              <FormInput key="address" value={ wellData.address } title="Address" multiline></FormInput>
+              <FormInput key="country" value={ wellData.country } title="Country" onChange={ val => formOnChange(val, "country")}></FormInput>
+              <FormInput key="address" value={ wellData.address } title="Address" multiline onChange={ val => formOnChange(val, "address")}></FormInput>
             </View>
           )}
         </Formik>
