@@ -13,7 +13,7 @@ import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
 import { Api } from "../../services/api/api"
-import { createNewWell, getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
+import { clearTemporaryNewWells, createNewWell, getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
 import { saveTerms } from "../../models/well/term.store"
 import Well from "../../models/well/well"
 import { WellStatusBadge } from "../../components/well/well-status-badge"
@@ -39,16 +39,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [selectedWell, setSelectedWell] = useState({} as Well)
   const [unsyncedData, setUnsyncedData] = useState([])
   const [syncProgress, setSyncProgress] = useState(0)
-
-  useFocusEffect(
-    React.useCallback(() => {
-      const getUnsyncedData = async () => {
-        const _unsyncedData = await getWellsByField('synced', false) || []
-        setUnsyncedData(_unsyncedData)
-      }
-      getUnsyncedData()
-    }, [])
-  )
+  const [latitude, setLatitude] = useState(null)
+  const [longitude, setLongitude] = useState(null)
 
   const drawMarkers = (data) => {
     const _markers = []
@@ -65,12 +57,18 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setMarkers(_markers)
   }
 
-  const getWells = async() => {
+  const getWells = async(_latitude?, _longitude?) => {
+    await clearTemporaryNewWells()
     let wells = await loadWells()
     if (wells.length === 0) {
+      const userLatitude = _latitude || latitude
+      const userLongitude = _longitude || longitude
       const api = new Api()
       await api.setup()
-      const apiResult = await api.getWells()
+      const apiResult = await api.getWells(
+        userLatitude,
+        userLongitude
+      )
       if (apiResult.kind === "ok") {
         wells = apiResult.wells
         await saveTerms(apiResult.terms)
@@ -87,6 +85,17 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     }
   }
 
+  useFocusEffect(
+    React.useCallback(() => {
+      const getUnsyncedData = async () => {
+        const _unsyncedData = await getWellsByField('synced', false) || []
+        setUnsyncedData(_unsyncedData)
+      }
+      getUnsyncedData()
+      getWells()
+    }, [])
+  )
+
   const refreshMap = useCallback(async () => {
     setMarkers([])
     await getWells()
@@ -99,12 +108,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const markerSelected = (marker) => {
     if (isAddRecord) return
-    wells.forEach((_well, index) => {
+    for (const index in wells) {
+      const _well = wells[index]
       if (_well.pk === marker.key) {
         setSelectedWell(_well)
       }
-      return true
-    })
+    }
     setIsViewRecord(true)
   }
 
@@ -125,16 +134,21 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     setSearch(_search)
   }
 
-  const watchLocation = () => {
-    Geolocation.getCurrentPosition(
-      position => {
+  const watchLocation = async () => {
+    await Geolocation.getCurrentPosition(
+      async (position) => {
         if (mapViewRef) {
+          await setLatitude(position.coords.latitude)
+          await setLongitude(position.coords.longitude)
           mapViewRef.current.animateCamera({
             center: {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude
             }
           })
+          if (wells.length === 0) {
+            getWells(position.coords.latitude, position.coords.longitude)
+          }
         }
       },
       error => {
@@ -154,6 +168,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
       ).then(res => {
         if (res === "granted") {
           watchLocation()
+        } else {
+          getWells()
         }
       })
     } catch (error) {
@@ -181,11 +197,13 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const submitSearch = async() => {
     setIsLoading(true)
     const results = []
-    wells.forEach((data) => {
-      if (data.id.toLowerCase().includes(search.toLowerCase())) {
-        results.push(data)
+    if (wells) {
+      for (const index in wells) {
+        if (wells[index].id.toLowerCase().includes(search.toLowerCase())) {
+          results.push(wells[index])
+        }
       }
-    })
+    }
     drawMarkers(results)
     setIsLoading(false)
   }

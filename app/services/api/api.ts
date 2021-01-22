@@ -6,6 +6,7 @@ import * as Types from "./api.types"
 import { load } from "../../utils/storage"
 import Well, { WellInterface } from "../../models/well/well"
 import { loadTerms } from "../../models/well/term.store"
+import { LIMIT } from "@env"
 
 /**
  * Manages all requests to the API.
@@ -109,9 +110,16 @@ export class Api {
   /**
    * Get a list of wells
    */
-  async getWells(): Promise<Types.GetWellsResult> {
+  async getWells(latitude = "", longitude = ""): Promise<Types.GetWellsResult> {
     // make the api call
-    const response: ApiResponse<any> = await this.apisauce.get(`/groundwater/api/well/minimized/`)
+    const limit = LIMIT || 10
+    let userCoordinate = ""
+    if (latitude && longitude) {
+      userCoordinate = `${latitude}&lon=${longitude}`
+    }
+    const response: ApiResponse<any> = await this.apisauce.get(
+      `/groundwater/api/well/minimized?${userCoordinate}&limit=${limit}`
+    )
 
     // the typical ways to die when calling an api
     if (!response.ok) {

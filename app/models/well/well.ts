@@ -1,6 +1,5 @@
 /* eslint-disable camelcase */
 /* eslint-disable @typescript-eslint/camelcase */
-import { addUnsyncedData } from "../sync/sync"
 import * as RNLocalize from 'react-native-localize'
 import moment from 'moment-timezone'
 
@@ -152,8 +151,11 @@ export default class Well implements WellInterface {
         this.status = well.status
         this.address = well.address
         this.last_update = well.last_update
-        this.synced = well.synced
         this.new_data = well.new_data
+        this.synced = well.synced
+        if (this.new_data && typeof well.synced === "undefined") {
+          this.synced = true
+        }
         this.ground_surface_elevation = well.ground_surface_elevation
         this.top_borehole_elevation = well.top_borehole_elevation
         this.level_measurements = well.level_measurements || []

@@ -5,6 +5,7 @@ import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import LoginScreen from "react-native-login-screen"
 import { save, load } from "../../utils/storage"
 import { API_URL } from "@env"
+import { Alert } from "react-native"
 
 const defaultImage = require("../../components/wallpaper/igrac.png")
 
@@ -45,6 +46,10 @@ export const LoginScreenPage: React.FunctionComponent<LoginScreenProps> = props 
       setSpinnerVisibility(false)
     }).catch(error => {
       console.log(error)
+      Alert.alert(
+        "Login Failed",
+        "Invalid username or password"
+      )
       setSpinnerVisibility(false)
     })
   }

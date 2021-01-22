@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import Well, { MeasurementType, Measurement } from "./well"
-import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField, createNewWell } from "./well.store"
+import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField, createNewWell, clearTemporaryNewWells, getWellsByField } from "./well.store"
 
 const minimizedData = {
   id: "1",
@@ -95,4 +95,15 @@ it("creates new well", async () => {
   const newWell = await createNewWell(0, 0)
   expect(newWell.pk).toBe(-4)
   expect(newWell.new_data).toBe(true)
+})
+
+it("clears temporary well", async () => {
+  const newWells = await getWellsByField('new_data', true)
+  expect(newWells.length).toBe(3)
+  // Delete all temporary wells
+  const deleted = await clearTemporaryNewWells()
+  expect(deleted).toBe(true)
+  // Check the new wells
+  const newWells2 = await getWellsByField('new_data', true)
+  expect(newWells2.length).toBe(0)
 })
