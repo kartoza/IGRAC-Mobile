@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { load, save } from "../../utils/storage"
-import Well, { WellInterface } from "./well"
+import Well from "./well"
 
 export const loadWells = async () => {
   const wells = await load("wells")
@@ -48,7 +48,7 @@ export const getWellsByField = async (field: string, value: any): Promise<Well[]
 export const saveWellByField = async (
   queryField: string,
   queryFieldValue: any,
-  wellData: WellInterface) => {
+  wellData: Well) => {
   const wells = await load("wells")
   if (wells) {
     for (const index in wells) {

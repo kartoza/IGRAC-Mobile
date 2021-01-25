@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { save } from "../../utils/storage"
-import { MeasurementType, WellInterface } from "../well/well"
+import { MeasurementType } from "../well/well"
 import { loadWells, saveWells } from "../well/well.store"
 import { addUnsyncedData, getSynced, getUnsynced, moveToSynced, mergeWithSynced } from "./sync"
 
@@ -63,12 +63,13 @@ it("merges remote data with stored local data", async() => {
       }
     }]
   })
-  const well: WellInterface = {
+  const well = {
     pk: 1,
     id: '1',
     name: 'test',
     latitude: 1,
     longitude: 1,
+    synced: false,
     level_measurements: [{
       id: 2,
       datetime: 111,

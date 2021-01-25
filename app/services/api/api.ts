@@ -4,7 +4,7 @@ import { getGeneralApiProblem } from "./api-problem"
 import { ApiConfig, DEFAULT_API_CONFIG } from "./api-config"
 import * as Types from "./api.types"
 import { load } from "../../utils/storage"
-import Well, { WellInterface } from "../../models/well/well"
+import Well from "../../models/well/well"
 import { loadTerms } from "../../models/well/term.store"
 import { LIMIT } from "@env"
 
@@ -169,7 +169,9 @@ export class Api {
       level_measurement: [],
       quality_measurement: [],
       yield_measurement: [],
-      well_metadata: {}
+      well_metadata: {},
+      geology: {},
+      drilling: {}
     }
     const parseMeasurementData = (measurementType, postType) => {
       well[measurementType].forEach(measurementData => {
@@ -216,6 +218,18 @@ export class Api {
     }
     postData.well_metadata = {
       organisation: getTermId(well.organisation, 'organisation') || ""
+    }
+    postData.drilling = {
+      year_of_drilling: well.construction_year || "",
+      drilling_method: getTermId(well.excavation_method, 'termdrillingmethod') || "",
+      driller: well.contractor,
+      cause_of_failure: well.cause_of_failure,
+      successful: well.successful
+    }
+    postData.geology = {
+      total_depth_value: well.total_depth || "",
+      total_depth_unit: "m",
+      reference_elevation: getTermId(well.total_depth_reference_elevation, 'termreferenceelevationtype') || ""
     }
     parseMeasurementData('level_measurements', 'level_measurement')
     parseMeasurementData('yield_measurements', 'yield_measurement')

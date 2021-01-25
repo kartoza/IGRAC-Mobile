@@ -13,29 +13,6 @@ export const formatTimeByOffset = (dateObject, offset) => {
   return dateObject.toGMTString()
 }
 
-export interface WellInterface {
-  pk: number
-  id: string
-  synced: boolean
-  name: string
-  last_update?: string
-  organisation?: string
-  status?: string
-  feature_type?: string
-  purpose?: string
-  country?: string
-  description?: string
-  address?: string
-  latitude: number
-  longitude: number
-  ground_surface_elevation?: number
-  top_borehole_elevation?: number
-  level_measurements?: Measurement[]
-  quality_measurements?: Measurement[]
-  yield_measurements?: Measurement[]
-  new_data?: boolean
-}
-
 export interface Measurement {
   id: number | string
   datetime: number
@@ -51,7 +28,7 @@ export const MeasurementType = {
   YieldMeasurements: YIELD_MEASUREMENTS
 }
 
-export default class Well implements WellInterface {
+export default class Well {
     pk: number
     id: string
     name: string
@@ -72,6 +49,13 @@ export default class Well implements WellInterface {
     quality_measurements: Measurement[]
     yield_measurements: Measurement[]
     new_data?: boolean
+    total_depth?: number | string
+    total_depth_reference_elevation?: string
+    construction_year?: number | string
+    excavation_method?: string
+    contractor?: string
+    successful?: string
+    cause_of_failure?: string
 
     convertFromMinimizedData = (minimizedData) => {
       this.pk = minimizedData.pk
@@ -88,6 +72,13 @@ export default class Well implements WellInterface {
       this.address = minimizedData.adr
       this.ground_surface_elevation = minimizedData.gse
       this.top_borehole_elevation = minimizedData.tbe
+      this.total_depth = minimizedData.dtd
+      this.construction_year = minimizedData.dy
+      this.excavation_method = minimizedData.ddm
+      this.contractor = minimizedData.dd
+      this.successful = minimizedData.ds
+      this.cause_of_failure = minimizedData.dr
+      this.total_depth_reference_elevation = minimizedData.dtdre
       this.synced = true
       this.new_data = false
 
@@ -136,7 +127,7 @@ export default class Well implements WellInterface {
       }
     }
 
-    constructor(well: WellInterface | any) {
+    constructor(well: any) {
       if (well) {
         this.id = well.id
         this.pk = well.pk
@@ -153,6 +144,13 @@ export default class Well implements WellInterface {
         this.last_update = well.last_update
         this.new_data = well.new_data
         this.synced = well.synced
+        this.total_depth = well.total_depth
+        this.construction_year = well.construction_year
+        this.excavation_method = well.excavation_method
+        this.contractor = well.contractor
+        this.successful = well.successful
+        this.cause_of_failure = well.cause_of_failure
+        this.total_depth_reference_elevation = well.total_depth_reference_elevation
         if (this.new_data && typeof well.synced === "undefined") {
           this.synced = true
         }
