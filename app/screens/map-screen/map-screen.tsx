@@ -197,6 +197,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const submitSearch = async() => {
+    setIsViewRecord(false)
+    setIsAddRecord(false)
     setIsLoading(true)
     const results = []
     if (wells) {
@@ -206,12 +208,18 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         }
       }
     }
+    if (mapViewRef) {
+      mapViewRef.current.fitToElements(true)
+    }
     drawMarkers(results)
     setIsLoading(false)
   }
 
   const onClearSearch = async() => {
-    getWells()
+    await getWells()
+    if (mapViewRef) {
+      mapViewRef.current.fitToElements(true)
+    }
   }
 
   const showError = (errorMessage) => {
