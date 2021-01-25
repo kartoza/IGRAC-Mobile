@@ -24,6 +24,7 @@ export function WellStatusBadge(props: WellStatusBadgeProps) {
         /> : (
           props.well.synced === false ? <Badge
             status="error"
+            badgeStyle={{ backgroundColor: "rgb(234, 206, 53)" }}
             value="Unsynced"
           /> : <Badge
             status="success"

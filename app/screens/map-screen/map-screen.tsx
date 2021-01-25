@@ -51,7 +51,9 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           longitude: data.longitude
         },
         title: data.id,
-        key: data.pk
+        key: data.pk,
+        synced: data.synced,
+        new_data: data.new_data
       })
     })
     setMarkers(_markers)
@@ -320,6 +322,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
               onPress={() => { markerSelected(marker) }}
               onDeselect={() => { markerDeselected() }}
               onSelect={() => { markerSelected(marker) }}
+              pinColor= { marker.new_data ? 'orange' : marker.synced ? 'red' : 'gold'}
             />
           )
         })}
