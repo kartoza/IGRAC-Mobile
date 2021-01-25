@@ -89,9 +89,36 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     )
   }
 
+  function yearValidation(year) {
+    if (year !== 0) {
+      if (("" + year).length !== 4) {
+        return "Year is not proper. Please check"
+      }
+      const currentYear = new Date().getFullYear()
+      if ((year < 1920) || (year > currentYear)) {
+        return "Year should be in range 1920 to current year"
+      }
+      return "ok"
+    }
+  }
+
+  const validateForm = (): any => {
+    const requiredFieldsOk = checkRequiredFields()
+    if (!requiredFieldsOk) {
+      return { kind: "bad", errorMessage: "Missing required value" }
+    }
+    if (updatedWellData.construction_year) {
+      const validation = yearValidation(updatedWellData.construction_year)
+      if (validation !== "ok") {
+        return { kind: "bad", errorMessage: validation }
+      }
+    }
+    return { kind: "ok", errorMessage: "" }
+  }
+
   const submitForm = async () => {
-    const checked = checkRequiredFields()
-    if (checked) {
+    const validated = validateForm()
+    if (validated.kind === "ok") {
       updatedWellData.synced = false
       await saveWellByField('pk', updatedWellData.pk, updatedWellData)
       setUpdated(false)
@@ -102,7 +129,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     } else {
       Alert.alert(
         "Error",
-        "Missing required value"
+        validated.errorMessage
       )
     }
   }
@@ -153,6 +180,18 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <FormInput key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
               <FormInput key="country" value={ wellData.country } title="Country" onChange={ val => formOnChange(val, "country")}></FormInput>
               <FormInput key="address" value={ wellData.address } title="Address" multiline onChange={ val => formOnChange(val, "address")}></FormInput>
+
+              <Text style={ styles.FORM_HEADER }>DRILLING AND CONSTRUCTION</Text>
+              <Text style={ styles.FORM_SUB_HEADER }>For wells and boreholes</Text>
+              <FormInput key="total_depth" value={ wellData.total_depth } title="Total depth" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "total_depth")}></FormInput>
+              <FormInput key="total_depth_reference_elevation" value={ wellData.total_depth_reference_elevation } options={ terms.termreferenceelevationtype } title="Total depth reference elevation" onChange={ val => formOnChange(val, "total_depth_reference_elevation")}></FormInput>
+              <FormInput key="construction_year" value={ wellData.construction_year } title="Construction year" numeric onChange={ val => formOnChange(val, "construction_year")}></FormInput>
+              <FormInput key="excavation_method" value={ wellData.excavation_method } title="Excavation method" options={ terms.termdrillingmethod } onChange={ val => formOnChange(val, "excavation_method")}></FormInput>
+              <FormInput key="contractor" value={ wellData.contractor } title="Contractor" onChange={ val => formOnChange(val, "contractor")}></FormInput>
+              <FormInput key="successful" value={ wellData.successful } title="Successful" options={['Yes', 'No']} onChange={ val => formOnChange(val, "successful")}></FormInput>
+              { updatedWellData.successful === "No" ? (
+                <FormInput key="cause_of_failure" value={ wellData.cause_of_failure } title="Cause of failure" multiline onChange={ val => formOnChange(val, "cause_of_failure")}></FormInput>
+              ) : null }
             </View>
           )}
         </Formik>

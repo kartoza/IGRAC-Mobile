@@ -56,6 +56,7 @@ export function FormInput(props: FormInputProps) {
         onValueChange={(itemValue, itemIndex) => {
           handleChange(itemValue, isUnit)
         }}>
+        { !isUnit ? <Picker.Item key={ "" } label={ "-------" } value={ "" } /> : null}
         {
           (typeof options !== "undefined")
             ? options.map((value, index) => {
@@ -70,7 +71,7 @@ export function FormInput(props: FormInputProps) {
               }
               return <Picker.Item key={ _key } label={ _name } value={ _name } />
             })
-            : <Picker.Item key={ "" } label={ "" } value={ "" } />
+            : null
         }
       </Picker>
     </View>
