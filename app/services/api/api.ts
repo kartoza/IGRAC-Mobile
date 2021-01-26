@@ -171,7 +171,8 @@ export class Api {
       yield_measurement: [],
       well_metadata: {},
       geology: {},
-      drilling: {}
+      drilling: {},
+      hydrogeology: {}
     }
     const parseMeasurementData = (measurementType, postType) => {
       well[measurementType].forEach(measurementData => {
@@ -199,6 +200,15 @@ export class Api {
         return true
       })
       return id
+    }
+    const getUnitValue = (value, unitValue, unitKey) => {
+      if (value && !unitValue) {
+        if (terms[unitKey]) {
+          return terms[unitKey][0]
+        }
+        return ""
+      }
+      return unitValue
     }
     postData.general_information = {
       original_id: well.id,
@@ -231,6 +241,29 @@ export class Api {
       total_depth_unit: "m",
       reference_elevation: getTermId(well.total_depth_reference_elevation, 'termreferenceelevationtype') || ""
     }
+    postData.hydrogeology = {
+      aquifer_name: well.aquifer_name || "",
+      aquifer_material: well.aquifer_material || "",
+      aquifer_type: getTermId(well.aquifer_type, "termaquifertype") || "",
+      aquifer_thickness: well.aquifer_thickness || "",
+      confinement: getTermId(well.confinement, "termconfinement") || "",
+      pumping_test: {
+        porosity: well.porosity || "",
+        hydraulic_conductivity_value: well.hydraulic_conductivity || "",
+        hydraulic_conductivity_unit: getUnitValue(well.hydraulic_conductivity, well.hydraulic_conductivity_unit, well.hydraulic_conductivity_unit_key),
+        transmissivity_value: well.transmissivity || "",
+        transmissivity_unit: getUnitValue(well.transmissivity, well.transmissivity_unit, well.transmissivity_unit_key),
+        specific_storage_value: well.specific_storage || "",
+        specific_storage_unit: getUnitValue(well.specific_storage, well.specific_storage_unit, well.specific_storage_unit_key),
+        specific_yield: well.specific_yield || "",
+        storativity_value: well.yield || "",
+        storativity_unit: getUnitValue(well.yield, well.yield_unit, well.yield_unit_key),
+        specific_capacity_value: well.specific_capacity || "",
+        specific_capacity_unit: getUnitValue(well.specific_capacity, well.specific_capacity_unit, well.specific_capacity_unit_key),
+        test_type: well.test_type || ""
+      }
+    }
+
     parseMeasurementData('level_measurements', 'level_measurement')
     parseMeasurementData('yield_measurements', 'yield_measurement')
     parseMeasurementData('quality_measurements', 'quality_measurement')
