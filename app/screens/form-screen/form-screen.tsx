@@ -27,7 +27,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const [updatedWellData, setUpdatedWellData] = useState({} as Well)
   const [updated, setUpdated] = useState(false)
   const [terms, setTerms] = useState({
-    organisation: []
+    organisation: [],
+    units: {}
   } as any)
 
   const goToMapScreen = React.useMemo(() => () => props.navigation.pop(), [
@@ -36,6 +37,9 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
 
   const loadWellData = async () => {
     const _wellData = await getWellByField("pk", route.params.wellPk)
+    if (!_wellData) {
+      goToMapScreen()
+    }
     setWellData(_wellData)
     setMeasurementData({
       level_measurements: _wellData.level_measurements,
@@ -144,7 +148,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
         centerComponent={{ text: "View Record", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
       />
-      { updated ? <View style={[mapStyles.BOTTOM_VIEW, { zIndex: 99 } ]}>
+      { updated && terms.units ? <View style={[mapStyles.BOTTOM_VIEW, { zIndex: 99 } ]}>
         <Button
           title="Submit"
           buttonStyle={{ width: "100%", backgroundColor: "rgb(241, 137, 3)"}}
@@ -153,7 +157,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
       </View> : <View></View>}
       <ScrollView style = { styles.CONTAINER }>
         <WellStatusBadge well={wellData}></WellStatusBadge>
-        <Text style={ styles.LAST_UPDATE_TEXT }>Last update : { wellData.last_update }</Text>
+        { wellData.last_update ? <Text style={ styles.LAST_UPDATE_TEXT }>Last update : { wellData.last_update }</Text> : null }
         <Text style={ styles.FORM_HEADER }>GENERAL INFORMATION</Text>
         <Formik
           initialValues={{ original_id: '-', status: '-', feature_type: '-', purpose: '-', description: '-' }}
@@ -178,14 +182,14 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <Text style={ styles.FORM_SUB_HEADER }>Location</Text>
               <FormInput key="latitude" value={ wellData.latitude } numeric required title="Latitude" onChange={ val => formOnChange(val, "latitude")}></FormInput>
               <FormInput key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(val, "longitude")}></FormInput>
-              <FormInput key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
-              <FormInput key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
+              <FormInput key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
+              <FormInput key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
               <FormInput key="country" value={ wellData.country } title="Country" options={ countryList.getNames() } onChange={ val => formOnChange(val, "country")}></FormInput>
               <FormInput key="address" value={ wellData.address } title="Address" multiline onChange={ val => formOnChange(val, "address")}></FormInput>
 
               <Text style={ styles.FORM_HEADER }>DRILLING AND CONSTRUCTION</Text>
               <Text style={ styles.FORM_SUB_HEADER }>For wells and boreholes</Text>
-              <FormInput key="total_depth" value={ wellData.total_depth } title="Total depth" units={ terms.unit_length } numeric onChange={ val => formOnChange(val, "total_depth")}></FormInput>
+              <FormInput key="total_depth" value={ wellData.total_depth } title="Total depth" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "total_depth")}></FormInput>
               <FormInput key="total_depth_reference_elevation" value={ wellData.total_depth_reference_elevation } options={ terms.termreferenceelevationtype } title="Total depth reference elevation" onChange={ val => formOnChange(val, "total_depth_reference_elevation")}></FormInput>
               <FormInput key="construction_year" value={ wellData.construction_year } title="Construction year" numeric onChange={ val => formOnChange(val, "construction_year")}></FormInput>
               <FormInput key="excavation_method" value={ wellData.excavation_method } title="Excavation method" options={ terms.termdrillingmethod } onChange={ val => formOnChange(val, "excavation_method")}></FormInput>
@@ -194,6 +198,67 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               { updatedWellData.successful === "No" ? (
                 <FormInput key="cause_of_failure" value={ wellData.cause_of_failure } title="Cause of failure" multiline onChange={ val => formOnChange(val, "cause_of_failure")}></FormInput>
               ) : null }
+
+              <Text style={ styles.FORM_HEADER }>HYDROGEOLOGY</Text>
+              <Text style={ styles.FORM_SUB_HEADER }>Aquifer</Text>
+              <FormInput key="aquifer_name" value={ wellData.aquifer_name } title="Aquifer name" onChange={ val => formOnChange(val, "aquifer_name")}></FormInput>
+              <FormInput key="aquifer_material" value={ wellData.aquifer_material } title="Aquifer material" onChange={ val => formOnChange(val, "aquifer_material")}></FormInput>
+              <FormInput key="aquifer_type" value={ wellData.aquifer_type } title="Aquifer type" options={ terms.termaquifertype } onChange={ val => formOnChange(val, "aquifer_type")}></FormInput>
+              <FormInput key="aquifer_thickness" value={ wellData.aquifer_thickness } title="Aquifer thickness" onChange={ val => formOnChange(val, "aquifer_thickness")}></FormInput>
+              <FormInput key="confinement" value={ wellData.confinement } title="Confinement" options={ terms.termconfinement } onChange={ val => formOnChange(val, "confinement")}></FormInput>
+
+              <Text style={ styles.FORM_SUB_HEADER }>Hydraulic properties</Text>
+              <FormInput key="porosity"
+                value={ wellData.porosity }
+                title="Porosity"
+                numeric
+                unitValue={ wellData.porosity_unit }
+                units={ terms.units.Percentage }
+                onUnitChange={ val => formOnChange(val, "porosity_unit") }
+                onChange={ val => formOnChange(val, "porosity")}></FormInput>
+              <FormInput key="hydraulic_conductivity"
+                value={ wellData.hydraulic_conductivity }
+                unitValue={ wellData.hydraulic_conductivity_unit }
+                numeric
+                units={ terms.units[wellData.hydraulic_conductivity_unit_key] }
+                onUnitChange={ val => formOnChange(val, "hydraulic_conductivity_unit")}
+                title="Hydraulic conductivity"
+                onChange={ val => formOnChange(val, "hydraulic_conductivity")}></FormInput>
+              <FormInput key="transmissivity"
+                value={ wellData.transmissivity }
+                unitValue={ wellData.transmissivity_unit }
+                numeric
+                units={ terms.units[wellData.transmissivity_unit_key] }
+                onUnitChange={ val => formOnChange(val, "transmissivity_unit") }
+                title="Transmissivity"
+                onChange={ val => formOnChange(val, "transmissivity")}></FormInput>
+              <FormInput
+                key="specific_storage"
+                value={ wellData.specific_storage }
+                unitValue={ wellData.specific_storage_unit }
+                numeric
+                units={ terms.units[wellData.specific_storage_unit_key] }
+                onUnitChange={ val => formOnChange(val, "specific_storage_unit") }
+                title="Specific storage"
+                onChange={ val => formOnChange(val, "specific_storage")}></FormInput>
+              <FormInput key="specific_yield" value={ wellData.specific_yield } title="Specific yield" onChange={ val => formOnChange(val, "specific_yield")}></FormInput>
+              <FormInput key="specific_capacity"
+                value={ wellData.specific_capacity }
+                unitValue={ wellData.specific_capacity_unit }
+                numeric
+                units={ terms.units[wellData.specific_capacity_unit_key] }
+                title="Specific capacity"
+                onUnitChange={ val => formOnChange(val, "specific_capacity_unit") }
+                onChange={ val => formOnChange(val, "specific_capacity")}></FormInput>
+              <FormInput key="yield"
+                value={ wellData.yield }
+                unitValue={ wellData.yield_unit }
+                title="Yield"
+                numeric
+                units={ terms.units[wellData.yield_unit_key] }
+                onUnitChange={ val => formOnChange(val, "yield_unit") }
+                onChange={ val => formOnChange(val, "yield")}></FormInput>
+              <FormInput key="test_type" value={ wellData.test_type } title="Test type" onChange={ val => formOnChange(val, "test_type")}></FormInput>
             </View>
           )}
         </Formik>

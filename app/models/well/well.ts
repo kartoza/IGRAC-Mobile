@@ -56,8 +56,42 @@ export default class Well {
     contractor?: string
     successful?: string
     cause_of_failure?: string
+    aquifer_name?: string
+    aquifer_material?: string
+    aquifer_type?: string
+    aquifer_thickness?: string
+    confinement?: string
+    porosity?: string
+    hydraulic_conductivity?: string
+    hydraulic_conductivity_unit?: string
+    hydraulic_conductivity_unit_key?: string = "length / time"
+    transmissivity?: string
+    transmissivity_unit?: string
+    transmissivity_unit_key?: string = "length^2 / time"
+    specific_storage?: string
+    specific_storage_unit?: string
+    specific_storage_unit_key?: string = "1 / length"
+    specific_yield?: string
+    specific_capacity?: string
+    specific_capacity_unit?: string
+    specific_capacity_unit_key?: string = "length^2 / time"
+    yield?: string
+    yield_unit?: string
+    yield_unit_key?: string = "length^3 / time"
+    test_type?: string
 
     convertFromMinimizedData = (minimizedData) => {
+      const splitValueAndUnit = data => {
+        if (typeof data === "undefined") {
+          return ["", ""]
+        }
+        const _allValues = data.split(" ")
+        if (_allValues.length > 1) {
+          return _allValues
+        } else {
+          return [data, ""]
+        }
+      }
       this.pk = minimizedData.pk
       this.id = minimizedData.id
       this.name = minimizedData.nm || ""
@@ -81,6 +115,29 @@ export default class Well {
       this.total_depth_reference_elevation = minimizedData.dtdre
       this.synced = true
       this.new_data = false
+      this.aquifer_name = minimizedData.an
+      this.aquifer_material = minimizedData.am
+      this.aquifer_type = minimizedData.at
+      this.aquifer_thickness = minimizedData.atn
+      this.confinement = minimizedData.ac
+      this.porosity = minimizedData.hp
+      const hydraulic_conductivity = splitValueAndUnit(minimizedData.hc)
+      this.hydraulic_conductivity = hydraulic_conductivity[0]
+      this.hydraulic_conductivity_unit = hydraulic_conductivity[1]
+      const transmissivity = splitValueAndUnit(minimizedData.ht)
+      this.transmissivity = transmissivity[0]
+      this.transmissivity_unit = transmissivity[1]
+      const specific_storage = splitValueAndUnit(minimizedData.hss)
+      this.specific_storage = specific_storage[0]
+      this.specific_storage_unit = specific_storage[1]
+      const specific_capacity = splitValueAndUnit(minimizedData.hsc)
+      this.specific_capacity = specific_capacity[0]
+      this.specific_capacity_unit = specific_capacity[1]
+      this.specific_yield = minimizedData.hsy
+      const yieldValue = splitValueAndUnit(minimizedData.hs)
+      this.yield = yieldValue[0]
+      this.yield_unit = yieldValue[1]
+      this.test_type = minimizedData.htt
 
       try {
         const deviceTimeZone = RNLocalize.getTimeZone()
@@ -129,33 +186,12 @@ export default class Well {
 
     constructor(well: any) {
       if (well) {
-        this.id = well.id
-        this.pk = well.pk
-        this.country = well.country
-        this.name = well.name
-        this.latitude = well.latitude
-        this.longitude = well.longitude
-        this.organisation = well.organisation
-        this.purpose = well.purpose
-        this.feature_type = well.feature_type
-        this.description = well.description
-        this.status = well.status
-        this.address = well.address
-        this.last_update = well.last_update
-        this.new_data = well.new_data
-        this.synced = well.synced
-        this.total_depth = well.total_depth
-        this.construction_year = well.construction_year
-        this.excavation_method = well.excavation_method
-        this.contractor = well.contractor
-        this.successful = well.successful
-        this.cause_of_failure = well.cause_of_failure
-        this.total_depth_reference_elevation = well.total_depth_reference_elevation
+        for (const key in well) {
+          this[key] = well[key]
+        }
         if (this.new_data && typeof well.synced === "undefined") {
           this.synced = true
         }
-        this.ground_surface_elevation = well.ground_surface_elevation
-        this.top_borehole_elevation = well.top_borehole_elevation
         this.level_measurements = well.level_measurements || []
         this.quality_measurements = well.quality_measurements || []
         this.yield_measurements = well.yield_measurements || []

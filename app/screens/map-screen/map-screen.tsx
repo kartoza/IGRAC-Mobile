@@ -93,8 +93,12 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         const _unsyncedData = await getWellsByField('synced', false) || []
         setUnsyncedData(_unsyncedData)
       }
-      getUnsyncedData()
-      getWells()
+      const reloadMap = async () => {
+        await getUnsyncedData()
+        await getWells()
+        setSearch("")
+      }
+      reloadMap()
     }, [])
   )
 
@@ -216,6 +220,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const onClearSearch = async() => {
+    setSearch('')
     await getWells()
     if (mapViewRef) {
       mapViewRef.current.fitToElements(true)
@@ -301,47 +306,51 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   return (
     <View style = { styles.CONTAINER }>
-      <SearchBar
-        placeholder="Search"
-        lightTheme
-        round
-        onChangeText={ updateSearch }
-        onClear={ onClearSearch }
-        onSubmitEditing={ submitSearch }
-        value={ search }
-        showLoading={ isLoading }
-      />
-      <MapView
-        ref = { mapViewRef }
-        onRegionChange={ onRegionChange }
-        followsUserLocation
-        style={ styles.MAP }
-        loadingEnabled={true}
-        showsUserLocation={true}
-        moveOnMarkerPress = {true}
-        onPress={(e) => { mapSelected(e) }}>
-        {markers.map(marker => {
-          return (
-            <Marker
-              key={marker.key}
-              coordinate={marker.coordinate}
-              title={marker.title}
-              ref={ref => { marker.ref = ref }}
-              onPress={() => { markerSelected(marker) }}
-              onDeselect={() => { markerDeselected() }}
-              onSelect={() => { markerSelected(marker) }}
-              pinColor= { marker.new_data ? 'orange' : marker.synced ? 'red' : 'gold'}
-            />
-          )
-        })}
-        {newRecordMarker
-          ? <Marker
-            key={'newRecord'}
-            coordinate={newRecordMarker.coordinate}
-            title={'New Record'}
-            pinColor={'orange'}
-          /> : null }
-      </MapView>
+      <View style={ styles.SEARCH_BAR_CONTAINER }>
+        <SearchBar
+          placeholder="Search"
+          lightTheme
+          round
+          onChangeText={ updateSearch }
+          onClear={ onClearSearch }
+          onSubmitEditing={ submitSearch }
+          value={ search }
+          showLoading={ isLoading }
+        />
+      </View>
+      <View style={ styles.MAP_VIEW_CONTAINER }>
+        <MapView
+          ref = { mapViewRef }
+          onRegionChange={ onRegionChange }
+          followsUserLocation
+          style={ styles.MAP }
+          loadingEnabled={true}
+          showsUserLocation={true}
+          moveOnMarkerPress = {true}
+          onPress={(e) => { mapSelected(e) }}>
+          {markers.map(marker => {
+            return (
+              <Marker
+                key={marker.key}
+                coordinate={marker.coordinate}
+                title={marker.title}
+                ref={ref => { marker.ref = ref }}
+                onPress={() => { markerSelected(marker) }}
+                onDeselect={() => { markerDeselected() }}
+                onSelect={() => { markerSelected(marker) }}
+                pinColor= { marker.new_data ? 'orange' : marker.synced ? 'red' : 'gold'}
+              />
+            )
+          })}
+          {newRecordMarker
+            ? <Marker
+              key={'newRecord'}
+              coordinate={newRecordMarker.coordinate}
+              title={'New Record'}
+              pinColor={'orange'}
+            /> : null }
+        </MapView>
+      </View>
 
       <Modal
         transparent={true}

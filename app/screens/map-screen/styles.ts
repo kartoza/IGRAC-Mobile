@@ -1,4 +1,4 @@
-import { StyleSheet, ViewStyle, Platform, TextStyle } from "react-native"
+import { StyleSheet, ViewStyle, Platform, TextStyle, Dimensions } from "react-native"
 
 const ACTIVITY_INDICATOR: ViewStyle = {
   top: 10,
@@ -25,6 +25,12 @@ const BOTTOM_VIEW: ViewStyle = {
 }
 const CONTAINER: ViewStyle = {
   height: "100%",
+}
+const SEARCH_BAR_CONTAINER: ViewStyle = {
+  height: 65,
+}
+const MAP_VIEW_CONTAINER: ViewStyle = {
+  height: Dimensions.get('window').height - ((Platform.OS === "ios") ? 100 : 80) - 65,
 }
 const MAP: ViewStyle = {
   height: "100%",
@@ -115,6 +121,7 @@ export const styles = StyleSheet.create({
   LOCATE_ME_BUTTON,
   LOCATE_ME_CONTAINER,
   MAP,
+  MAP_VIEW_CONTAINER,
   MID_BOTTOM_BUTTON,
   MID_BOTTOM_CONTAINER,
   MID_BOTTOM_CONTENTS,
@@ -122,6 +129,7 @@ export const styles = StyleSheet.create({
   MID_BOTTOM_TEXT,
   MODAL_BACKGROUND,
   MODAL_TEXT,
+  SEARCH_BAR_CONTAINER,
   SYNC_BADGE,
   SYNC_BUTTON,
   SYNC_BUTTON_CONTAINER,

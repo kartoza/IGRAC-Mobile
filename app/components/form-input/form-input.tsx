@@ -8,6 +8,8 @@ import { feetToMeters, metersToFeet } from "../../utils/convert"
 export interface FormInputProps {
   options?: {},
   onChange?: any,
+  onUnitChange?: any,
+  unitValue?: string,
   key: string,
   title: string,
   value: string | number,
@@ -27,8 +29,11 @@ export function FormInput(props: FormInputProps) {
       if (typeof props.value !== "undefined") {
         setInputValue(props.value + "")
       }
+      if (typeof props.unitValue !== "undefined") {
+        setUnitValue(props.unitValue + "")
+      }
     })()
-  }, [props.value])
+  }, [props.value, props.unitValue])
 
   const handleChange = (value, isUnit = false) => {
     let outputValue = null
@@ -38,6 +43,11 @@ export function FormInput(props: FormInputProps) {
         outputValue = feetToMeters(inputValue)
       } else {
         outputValue = inputValue
+        if (typeof props.onUnitChange !== "undefined") {
+          setUpdated(true)
+          props.onUnitChange(value)
+          return
+        }
       }
     } else {
       setInputValue(value)
@@ -78,7 +88,7 @@ export function FormInput(props: FormInputProps) {
   }
   return (
     <View>
-      <Text style={[(props.required ? styles.LABEL_IMPORTANT : styles.LABEL), (updated ? { backgroundColor: "rgba(189, 202, 18, 0.2)"}:{}) ]}> { props.title }</Text>
+      <Text style={[(props.required ? styles.LABEL_IMPORTANT : styles.LABEL), (updated ? { backgroundColor: "rgba(189, 202, 18, 0.2)"}:{})]}> { props.title }</Text>
       <View style={props.units ? styles.MULTIPLE_INPUT_STYLE : styles.TEXT_INPUT_STYLE}>
         { props.options
           ? pickerForm(props.options)
