@@ -82,6 +82,9 @@ export default class Well {
 
     convertFromMinimizedData = (minimizedData) => {
       const splitValueAndUnit = data => {
+        if (typeof data === "undefined") {
+          return ["", ""]
+        }
         const _allValues = data.split(" ")
         if (_allValues.length > 1) {
           return _allValues
