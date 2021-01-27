@@ -112,13 +112,13 @@ export class Api {
    */
   async getWells(latitude = "", longitude = ""): Promise<Types.GetWellsResult> {
     // make the api call
-    const limit = LIMIT || 10
+    const limit = LIMIT ? `limit=${LIMIT}` : ''
     let userCoordinate = ""
     if (latitude && longitude) {
       userCoordinate = `${latitude}&lon=${longitude}`
     }
     const response: ApiResponse<any> = await this.apisauce.get(
-      `/groundwater/api/well/minimized?${userCoordinate}&limit=${limit}`
+      `/groundwater/api/well/minimized?${userCoordinate}&${limit}`
     )
 
     // the typical ways to die when calling an api
@@ -130,7 +130,7 @@ export class Api {
     // transform the data into the format we are expecting
     try {
       const rawData = response.data
-      const resultWells: Well[] = rawData.wells.map((raw) => new Well({}).convertFromMinimizedData(raw))
+      const resultWells: Well[] = rawData.results.map((raw) => new Well({}).convertFromMinimizedData(raw))
       return { kind: "ok", wells: resultWells, terms: rawData.terms }
     } catch {
       return { kind: "bad-data" }
@@ -154,7 +154,7 @@ export class Api {
     // transform the data into the format we are expecting
     try {
       const raw = response.data
-      return { kind: "ok", well: new Well({}).convertFromMinimizedData(raw.wells[0]) }
+      return { kind: "ok", well: new Well({}).convertFromMinimizedData(raw.results[0]) }
     } catch {
       return { kind: "bad-data" }
     }
