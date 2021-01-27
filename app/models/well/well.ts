@@ -79,6 +79,7 @@ export default class Well {
     yield_unit?: string
     yield_unit_key?: string = "length^3 / time"
     test_type?: string
+    editable?: boolean
 
     convertFromMinimizedData = (minimizedData) => {
       const splitValueAndUnit = data => {
@@ -138,6 +139,11 @@ export default class Well {
       this.yield = yieldValue[0]
       this.yield_unit = yieldValue[1]
       this.test_type = minimizedData.htt
+      if (minimizedData.editable === "Yes") {
+        this.editable = true
+      } else {
+        this.editable = false
+      }
 
       try {
         const deviceTimeZone = RNLocalize.getTimeZone()

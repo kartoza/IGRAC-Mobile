@@ -16,6 +16,7 @@ export interface FormInputProps {
   numeric?: boolean,
   required?: boolean,
   multiline?: boolean,
+  editable?: boolean,
   units?: []
 }
 
@@ -23,6 +24,7 @@ export function FormInput(props: FormInputProps) {
   const [inputValue, setInputValue] = useState("")
   const [unitValue, setUnitValue] = useState("")
   const [updated, setUpdated] = useState(false)
+  const [editable, setEditable] = useState(true)
 
   useEffect(() => {
     ;(async () => {
@@ -31,6 +33,9 @@ export function FormInput(props: FormInputProps) {
       }
       if (typeof props.unitValue !== "undefined") {
         setUnitValue(props.unitValue + "")
+      }
+      if (typeof props.editable !== "undefined") {
+        setEditable(props.editable)
       }
     })()
   }, [props.value, props.unitValue])
@@ -63,6 +68,7 @@ export function FormInput(props: FormInputProps) {
       <Picker
         selectedValue={ isUnit ? unitValue : inputValue }
         style={styles.PICKER_INPUT_STYLE}
+        enabled={ editable }
         onValueChange={(itemValue, itemIndex) => {
           handleChange(itemValue, isUnit)
         }}>
@@ -93,6 +99,7 @@ export function FormInput(props: FormInputProps) {
         { props.options
           ? pickerForm(props.options)
           : <TextInput
+            editable={ editable }
             onChangeText={ (value) => handleChange(value) }
             value={ inputValue }
             style={[styles.TEXT_INPUT_STYLE, (props.multiline ? { height: 100 } : {}), (props.units ? { width : '60%'} : {})]}
