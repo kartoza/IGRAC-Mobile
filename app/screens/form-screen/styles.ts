@@ -64,7 +64,8 @@ const TEXT_INPUT_STYLE: ViewStyle = {
   backgroundColor: "#ffffff",
   borderRadius: 5,
   marginTop: 5,
-  paddingLeft: 10
+  paddingLeft: 10,
+  color: "black"
 }
 
 const PICKER_INPUT_STYLE: ViewStyle = {
@@ -100,6 +101,17 @@ const LAST_UPDATE_TEXT: TextStyle = {
   fontStyle: 'italic'
 }
 
+const LOADING: ViewStyle = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999999,
+}
+
 export const styles = StyleSheet.create({
   CHART_CONTAINER,
   CHART_LABEL,
@@ -111,6 +123,7 @@ export const styles = StyleSheet.create({
   LABEL,
   LABEL_IMPORTANT,
   LAST_UPDATE_TEXT,
+  LOADING,
   MULTIPLE_INPUT_STYLE,
   PICKER_INPUT_STYLE,
   PICKER_SM_INPUT_STYLE,
