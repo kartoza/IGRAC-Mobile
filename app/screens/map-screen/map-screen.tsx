@@ -47,8 +47,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     data.forEach((data) => {
       _markers.push({
         coordinate: {
-          latitude: data.latitude,
-          longitude: data.longitude
+          latitude: parseFloat(data.latitude),
+          longitude: parseFloat(data.longitude)
         },
         title: data.id,
         key: data.pk,
