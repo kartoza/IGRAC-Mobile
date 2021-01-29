@@ -3,7 +3,7 @@ import { any } from "ramda"
 import React, { useState, useEffect } from "react"
 import { View, Text, TextInput } from "react-native"
 import { styles } from '../../screens/form-screen/styles'
-import { feetToMeters, metersToFeet } from "../../utils/convert"
+import { feetToMeters, cmToMeeters } from "../../utils/convert"
 
 export interface FormInputProps {
   options?: {},
@@ -46,6 +46,8 @@ export function FormInput(props: FormInputProps) {
       setUnitValue(value)
       if (value === "ft") {
         outputValue = feetToMeters(inputValue)
+      } else if (value === "cm") {
+        outputValue = cmToMeeters(inputValue)
       } else {
         outputValue = inputValue
         if (typeof props.onUnitChange !== "undefined") {
