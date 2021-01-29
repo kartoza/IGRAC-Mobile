@@ -65,6 +65,10 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         dataValue = feetToMeters(data.value)
         dataUnit = "m"
       }
+      if (!dataUnit || dataUnit === "null") {
+        dataUnit = ""
+      }
+      console.log("dataUnit", dataUnit)
       const measurementData = {
         id: "",
         datetime: data.datetime || Moment(date).unix(),
