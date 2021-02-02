@@ -104,7 +104,7 @@ export function FormInput(props: FormInputProps) {
             editable={ editable }
             onChangeText={ (value) => handleChange(value) }
             value={ inputValue }
-            style={[styles.TEXT_INPUT_STYLE, (props.multiline ? { height: 100 } : {}), (props.units ? { width : '60%'} : {})]}
+            style={[styles.TEXT_INPUT_STYLE, (props.multiline ? { height: 100, textAlignVertical: 'top' } : {}), (props.units ? { width : '60%'} : {})]}
             multiline={ props.multiline }
             keyboardType={ props.numeric ? "numeric" : "default" }
           />
