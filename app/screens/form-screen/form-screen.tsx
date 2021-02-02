@@ -213,7 +213,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <FormInput editable={ editMode } key="contractor" value={ wellData.contractor } title="Contractor" onChange={ val => formOnChange(val, "contractor")}></FormInput>
               <FormInput editable={ editMode } key="successful" value={ wellData.successful } title="Successful" options={['Yes', 'No']} onChange={ val => formOnChange(val, "successful")}></FormInput>
               { updatedWellData.successful === "No" ? (
-                <FormInput key="cause_of_failure" value={ wellData.cause_of_failure } title="Cause of failure" multiline onChange={ val => formOnChange(val, "cause_of_failure")}></FormInput>
+                <FormInput editable={ editMode } key="cause_of_failure" value={ wellData.cause_of_failure } title="Cause of failure" multiline onChange={ val => formOnChange(val, "cause_of_failure")}></FormInput>
               ) : null }
 
               <Text style={ styles.FORM_HEADER }>HYDROGEOLOGY</Text>
