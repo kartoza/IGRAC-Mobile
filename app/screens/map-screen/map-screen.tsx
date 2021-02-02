@@ -196,6 +196,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     const newWell = await createNewWell(newRecordMarker.coordinate.latitude, newRecordMarker.coordinate.longitude)
     props.navigation.navigate("form", {
       wellPk: newWell.pk,
+      editMode: true,
       onBackToMap: () => refreshMap()
     })
   }
