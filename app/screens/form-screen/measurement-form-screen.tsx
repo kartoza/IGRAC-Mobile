@@ -13,7 +13,6 @@ import { TouchableWithoutFeedback } from "react-native-gesture-handler"
 import { delay } from "../../utils/delay"
 import { feetToMeters } from "../../utils/convert"
 import { loadTerms } from "../../models/well/term.store"
-import { updateWellMeasurement } from "../../models/well/well.store"
 import { MeasurementType } from "../../models/well/well"
 import { getUnsynced } from "../../models/sync/sync"
 

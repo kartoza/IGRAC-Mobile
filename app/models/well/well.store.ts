@@ -84,6 +84,7 @@ export const createNewWell = async (latitude: number, longitude: number) => {
     latitude: latitude,
     longitude: longitude,
     new_data: true,
+    editable: true,
     datetime: Math.floor(Date.now() / 1000)
   })
   const allWells = await loadWells()

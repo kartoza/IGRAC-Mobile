@@ -26,7 +26,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const [measurementData, setMeasurementData] = useState({} as any)
   const [updatedWellData, setUpdatedWellData] = useState({} as Well)
   const [updated, setUpdated] = useState(false)
-  const [editMode, setEditMode] = useState(false)
+  const [editMode, setEditMode] = useState(route.params.editMode !== undefined ? route.params.editMode : false)
   const [loading, setLoading] = useState(true)
   const [terms, setTerms] = useState({
     organisation: [],
@@ -79,9 +79,6 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
 
   useEffect(() => {
     ;(async () => {
-      if (typeof route.params.editMode !== "undefined") {
-        setEditMode(route.params.editMode)
-      }
       await loadWellData()
     })()
   }, [])
@@ -200,8 +197,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <FormInput editable={ editMode } key="description" value={ wellData.description } title="Description" multiline onChange={ val => formOnChange(val, "description")}></FormInput>
 
               <Text style={ styles.FORM_SUB_HEADER }>Location</Text>
-              <FormInput editable={ editMode } key="latitude" value={ wellData.latitude } numeric required title="Latitude" onChange={ val => formOnChange(parseFloat(val), "latitude")}></FormInput>
-              <FormInput editable={ editMode } key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(parseFloat(val), "longitude")}></FormInput>
+              <FormInput editable={ wellData.new_data ? editMode : false } key="latitude" value={ wellData.latitude } numeric required title="Latitude" onChange={ val => formOnChange(parseFloat(val), "latitude")}></FormInput>
+              <FormInput editable={ wellData.new_data ? editMode : false } key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(parseFloat(val), "longitude")}></FormInput>
               <FormInput editable={ editMode } key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
               <FormInput editable={ editMode } key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
               <FormInput editable={ editMode } key="country" value={ wellData.country } title="Country" options={ countryList.getNames() } onChange={ val => formOnChange(val, "country")}></FormInput>
