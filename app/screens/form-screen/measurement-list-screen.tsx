@@ -5,11 +5,12 @@ import React, { useState, useEffect } from "react"
 import Moment from 'moment'
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, } from "@react-navigation/native"
-import { View, ActivityIndicator, Text, StyleSheet } from "react-native"
+import { View, ActivityIndicator, Text, StyleSheet, Alert } from "react-native"
 import { Header, ListItem, Button, Icon } from 'react-native-elements'
 import { styles } from "../form-screen/styles"
 import { getWellByField, saveWellByField } from "../../models/well/well.store"
 import { ScrollView } from "react-native-gesture-handler"
+import { none } from "ramda"
 
 export interface MeasurementListScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -64,6 +65,29 @@ export const MeasurementListScreen: React.FunctionComponent<MeasurementListScree
     route.params,
   ])
 
+  const deleteRecord = (measurementIndex) => {
+    // Works on both Android and iOS
+    Alert.alert(
+      'Deleting Measurement Data',
+      'Are you sure you want to delete this data?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel'
+        },
+        {
+          text: 'Yes',
+          onPress: () => {
+            route.params.onGoBack(null, measurementIndex)
+            props.navigation.goBack()
+          }
+        }
+      ],
+      { cancelable: false }
+    )
+  }
+
   return (
     <View style={StyleSheet.absoluteFill}>
       <Header
@@ -106,7 +130,7 @@ export const MeasurementListScreen: React.FunctionComponent<MeasurementListScree
                       ></Icon>
                     }
                     buttonStyle={{ marginRight: 20, backgroundColor: "rgb(241, 137, 3)" }}
-                    onPress={() => console.log('delete')}
+                    onPress={() => deleteRecord(i)}
                   ></Button>
                   <Button
                     icon={

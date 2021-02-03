@@ -79,7 +79,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
 
   const goToMeasurementListScreen = React.useMemo(() => (measurementType) => props.navigation.navigate("measurementList", {
     measurementType: measurementType,
-    wellPk: route.params.wellPk,
+    wellPk: wellData.pk,
     wellData: updatedWellData,
     onGoBack: async (_measurementData, measurementIndex) => {
       setUpdated(true)
@@ -88,11 +88,15 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
         yield_measurements: [],
         quality_measurements: []
       })
-      updatedWellData[measurementType][measurementIndex] = _measurementData
+      if (!_measurementData) {
+        updatedWellData[measurementType].splice(measurementIndex, 1)
+      } else {
+        updatedWellData[measurementType][measurementIndex] = _measurementData
+      }
       setMeasurementData({ ...measurementData, [measurementType]: updatedWellData[measurementType] })
       setUpdatedWellData({ ...updatedWellData })
     }
-  }), [updatedWellData, props.navigation, route.params.wellPk, measurementData])
+  }), [updatedWellData, props.navigation, measurementData, wellData])
 
   useEffect(() => {
     ;(async () => {
