@@ -14,7 +14,6 @@ import { delay } from "../../utils/delay"
 import { feetToMeters } from "../../utils/convert"
 import { loadTerms } from "../../models/well/term.store"
 import { MeasurementType } from "../../models/well/well"
-import { getUnsynced } from "../../models/sync/sync"
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
@@ -26,9 +25,8 @@ export interface MeasurementFormScreenProps {
 
 export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScreenProps> = props => {
   const { route } = props
-  const [date, setDate] = useState(new Date())
+  const [date, setDate] = useState(typeof route.params.datetime !== "undefined" ? new Date(route.params.datetime * 1000) : new Date())
   const [loading, setLoading] = useState(false)
-  const [wellId, setWellId] = useState(route.params.wellId || '')
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [mode, setMode] = useState('date')
   const [measurementParameters, setMeasurementParameters] = useState([])
@@ -67,7 +65,6 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
       if (!dataUnit || dataUnit === "null") {
         dataUnit = ""
       }
-      console.log("dataUnit", dataUnit)
       const measurementData = {
         id: "",
         datetime: data.datetime || Moment(date).unix(),
@@ -91,8 +88,6 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
   useEffect(() => {
     ;(async () => {
       const terms = await loadTerms()
-      const unsynced = await getUnsynced()
-      console.log(unsynced)
       let measurementTerm = ""
       let measurementTitle = ""
       if (route.params.measurementType === MeasurementType.LevelMeasurements) {
@@ -128,12 +123,15 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
         containerStyle={ styles.HEADER_CONTAINER }
       />
       <ScrollView style = { styles.CONTAINER }>
-        <Text style={ styles.FORM_HEADER }>ADD MEASUREMENT</Text>
+        <Text style={ styles.FORM_HEADER }>{ typeof route.params.value !== "undefined" ? "EDIT" : "ADD" } MEASUREMENT</Text>
         <Formik
-          initialValues={{}}
+          initialValues={{
+            methodology: typeof route.params.methodology !== "undefined" ? route.params.methodology : "",
+            value: typeof route.params.value !== "undefined" ? route.params.value : ""
+          }}
           onSubmit={submitForm}
         >
-          {({ handleChange, handleBlur, handleSubmit, setFieldValue }) => (
+          {({ handleChange, handleBlur, handleSubmit, setFieldValue, values }) => (
             <View>
               <Text style={ styles.LABEL }>Date and Time</Text>
               <TouchableWithoutFeedback onPress={ () => openDatePicker('date') }>
@@ -162,13 +160,15 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
               </View>
               <Text style={ styles.LABEL }>Methodology</Text>
               <TextInput
+                key='methodology'
                 onChangeText={ handleChange('methodology') }
                 onBlur={ handleBlur('methodology') }
                 style={ styles.TEXT_INPUT_STYLE }
+                value={ values.methodology }
               />
               <Text style={ styles.REQUIRED_LABEL }>Value*</Text>
               <View style={ styles.MULTIPLE_INPUT_STYLE }>
-                <TextInput onChangeText={ handleChange('value') } keyboardType='numeric' style={{ width: "60%" }}/>
+                <TextInput onChangeText={ handleChange('value') } keyboardType='numeric' style={{ width: "60%" }} value={ values.value }/>
                 <Picker
                   selectedValue={ selectedUnit }
                   onValueChange={(itemValue, itemIndex) => {

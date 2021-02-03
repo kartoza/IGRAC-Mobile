@@ -20,6 +20,7 @@ const PICKER_CONTAINER_STYLE: ViewStyle = {
 export interface MeasurementChartProps {
   measurementData: any[],
   onAddClicked?: any,
+  onEditClicked?: any,
   measurementType: any,
   editable?: boolean
 }
@@ -110,7 +111,9 @@ export function MeasurementChart(props: MeasurementChartProps) {
           selectedValue={ selectedParameter }
           onValueChange={(itemValue, itemIndex) => {
             setSelectedParameter(itemValue + "")
-            setSelectedUnit(chartUnits[itemValue][0])
+            if (typeof chartUnits[itemValue] !== "undefined") {
+              setSelectedUnit(chartUnits[itemValue][0])
+            }
           }
           }>
           {
@@ -148,10 +151,11 @@ export function MeasurementChart(props: MeasurementChartProps) {
           valueFormatter: chartData[`${selectedParameter} (${selectedUnit})`].labels,
         }}
       /> : <View></View>}
-      { editable ? <Button
+      { editable ? <View><Button
         containerStyle={{ marginTop: 5 }}
         title="Add measurement"
-        onPress={ () => { props.onAddClicked(selectedParameter, selectedUnit) }}></Button> : null 
+        onPress={ () => { props.onAddClicked(selectedParameter, selectedUnit) }}></Button>
+      <Button containerStyle={{ marginTop: 5}} title="Edit unsynced data" onPress={ () => { typeof props.onEditClicked !== "undefined" ? props.onEditClicked() : console.log('Edit') }}></Button></View> : null
       }
     </View>
   )
