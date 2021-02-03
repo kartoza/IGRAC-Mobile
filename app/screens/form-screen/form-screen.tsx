@@ -37,6 +37,15 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     props.navigation,
   ])
 
+  const getUnsyncedMeasurement = (_measurementData) => {
+    for (let i = 0; i < _measurementData.length; i++) {
+      if (_measurementData[i].id === "") {
+        return true
+      }
+    }
+    return false
+  }
+
   const loadWellData = async () => {
     const _wellData = await getWellByField("pk", route.params.wellPk)
     if (!_wellData) {
@@ -46,12 +55,31 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     setMeasurementData({
       level_measurements: _wellData.level_measurements,
       yield_measurements: _wellData.yield_measurements,
-      quality_measurements: _wellData.quality_measurements
+      quality_measurements: _wellData.quality_measurements,
+      level_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.level_measurements),
+      yield_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.yield_measurements),
+      quality_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.quality_measurements),
     })
     setUpdatedWellData(new Well(Object.assign({}, _wellData)))
     const _terms = await loadTerms()
     setTerms(_terms)
     setLoading(false)
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateMeasurementData = (measurementType, _wellData) => {
+    setMeasurementData({
+      level_measurements: [],
+      yield_measurements: [],
+      quality_measurements: [],
+    })
+    setMeasurementData({
+      ...measurementData,
+      [measurementType]: _wellData[measurementType],
+      level_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.level_measurements),
+      yield_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.yield_measurements),
+      quality_measurements_unsynced_exist: getUnsyncedMeasurement(_wellData.quality_measurements)
+    })
   }
 
   const goToMeasurementFormScreen = React.useMemo(() => (measurementType, selectedParameter?, selectedUnit?) => props.navigation.navigate("measurementForm", {
@@ -62,20 +90,31 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     onGoBack: async (_measurementData) => {
       setUpdated(true)
       await updatedWellData.addMeasurementData(measurementType, _measurementData)
-      await setMeasurementData({
-        level_measurements: [],
-        yield_measurements: [],
-        quality_measurements: []
-      })
-      await setMeasurementData({ ...measurementData, [measurementType]: updatedWellData[measurementType] })
-      await setUpdatedWellData({ ...updatedWellData })
+      updateMeasurementData(measurementType, updatedWellData)
+      setUpdatedWellData({ ...updatedWellData })
     }
   }), [
     props.navigation,
     wellData,
     updatedWellData,
-    measurementData
+    updateMeasurementData
   ])
+
+  const goToMeasurementListScreen = React.useMemo(() => (measurementType) => props.navigation.navigate("measurementList", {
+    measurementType: measurementType,
+    wellPk: wellData.pk,
+    wellData: updatedWellData,
+    onGoBack: async (_measurementData, measurementIndex) => {
+      setUpdated(true)
+      if (!_measurementData) {
+        updatedWellData[measurementType].splice(measurementIndex, 1)
+      } else {
+        updatedWellData[measurementType][measurementIndex] = _measurementData
+      }
+      updateMeasurementData(measurementType, updatedWellData)
+      setUpdatedWellData({ ...updatedWellData })
+    }
+  }), [updatedWellData, props.navigation, updateMeasurementData, wellData])
 
   useEffect(() => {
     ;(async () => {
@@ -288,6 +327,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               measurementData={measurementData.level_measurements}
               measurementType={MeasurementType.LevelMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.LevelMeasurements, selectedParameter, selectedUnit)}
+              onEditClicked= { () => goToMeasurementListScreen(MeasurementType.LevelMeasurements) }
+              isUnsyncedDataExist={ measurementData.level_measurements_unsynced_exist }
             ></MeasurementChart> : null
           }
         </View>
@@ -299,6 +340,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               measurementData={measurementData.quality_measurements}
               measurementType={MeasurementType.QualityMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.QualityMeasurements, selectedParameter, selectedUnit)}
+              onEditClicked= { () => goToMeasurementListScreen(MeasurementType.QualityMeasurements)}
+              isUnsyncedDataExist={ measurementData.quality_measurements_unsynced_exist }
             ></MeasurementChart> : null
           }
         </View>
@@ -310,6 +353,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               measurementData={measurementData.yield_measurements}
               measurementType={MeasurementType.YieldMeasurements}
               onAddClicked={ (selectedParameter, selectedUnit) => goToMeasurementFormScreen(MeasurementType.YieldMeasurements, selectedParameter, selectedUnit)}
+              onEditClicked= { () => goToMeasurementListScreen(MeasurementType.YieldMeasurements)}
+              isUnsyncedDataExist={ measurementData.yield_measurements_unsynced_exist }
             ></MeasurementChart> : null
           }
         </View>
