@@ -22,7 +22,8 @@ export interface MeasurementChartProps {
   onAddClicked?: any,
   onEditClicked?: any,
   measurementType: any,
-  editable?: boolean
+  editable?: boolean,
+  isUnsyncedDataExist?: boolean
 }
 
 export function MeasurementChart(props: MeasurementChartProps) {
@@ -155,7 +156,9 @@ export function MeasurementChart(props: MeasurementChartProps) {
         containerStyle={{ marginTop: 5 }}
         title="Add measurement"
         onPress={ () => { props.onAddClicked(selectedParameter, selectedUnit) }}></Button>
-      <Button containerStyle={{ marginTop: 5}} title="Edit unsynced data" onPress={ () => { typeof props.onEditClicked !== "undefined" ? props.onEditClicked() : console.log('Edit') }}></Button></View> : null
+      <Button
+        disabled={ typeof props.isUnsyncedDataExist !== "undefined" ? !props.isUnsyncedDataExist : false }
+        containerStyle={{ marginTop: 5}} title="Edit unsynced data" onPress={ () => { typeof props.onEditClicked !== "undefined" ? props.onEditClicked() : console.log('Edit') }}></Button></View> : null
       }
     </View>
   )
