@@ -13,6 +13,7 @@ import { MeasurementChart } from "../../components/measurement-chart/measurement
 import { FormInput } from "../../components/form-input/form-input"
 import { styles as mapStyles } from "../../screens/map-screen/styles"
 import { WellStatusBadge } from "../../components/well/well-status-badge"
+import Geolocation from "@react-native-community/geolocation"
 
 const countryList = require("country-list")
 
@@ -191,6 +192,33 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     route.params
   ])
 
+  const setCoordinateToCurrentLocation = async () => {
+    await Geolocation.getCurrentPosition(
+      async (position) => {
+        if (updatedWellData.latitude !== position.coords.latitude || updatedWellData.longitude !== position.coords.longitude) {
+          setWellData({
+            ...wellData,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+          setUpdatedWellData({
+            ...updatedWellData,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          })
+          setUpdated(true)
+        }
+      },
+      error => {
+        Alert.alert(
+          error.message,
+          "The app needs location permissions. Please grant this permission to continue using this feature."
+        )
+      },
+      { enableHighAccuracy: true, timeout: 1000 },
+    )
+  }
+
   return (
     <View style={{ height: "100%" }}>
       <Header
@@ -238,6 +266,13 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <Text style={ styles.FORM_SUB_HEADER }>Location</Text>
               <FormInput editable={ wellData.new_data ? editMode : false } key="latitude" value={ wellData.latitude } numeric required title="Latitude" onChange={ val => formOnChange(parseFloat(val), "latitude")}></FormInput>
               <FormInput editable={ wellData.new_data ? editMode : false } key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(parseFloat(val), "longitude")}></FormInput>
+
+              { editMode
+                ? <Button
+                  title="Set to current location"
+                  containerStyle={{ marginTop: 10 }}
+                  onPress={ () => setCoordinateToCurrentLocation() }></Button> : null }
+
               <FormInput editable={ editMode } key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
               <FormInput editable={ editMode } key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
               <FormInput editable={ editMode } key="country" value={ wellData.country } title="Country" options={ countryList.getNames() } onChange={ val => formOnChange(val, "country")}></FormInput>

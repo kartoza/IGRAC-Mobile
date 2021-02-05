@@ -158,7 +158,10 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         }
       },
       error => {
-        console.log(error)
+        Alert.alert(
+          error.message,
+          "The app needs location permissions. Please grant this permission to continue using this feature."
+        )
       },
       { enableHighAccuracy: true, timeout: 1000 },
     )
