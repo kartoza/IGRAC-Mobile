@@ -204,6 +204,14 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     })
   }
 
+  const fitMapToMarkers = () => {
+    delay(300).then(() => {
+      if (mapViewRef) {
+        mapViewRef.current.fitToElements(true)
+      }
+    })
+  }
+
   const submitSearch = async() => {
     setIsViewRecord(false)
     setIsAddRecord(false)
@@ -216,19 +224,15 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         }
       }
     }
-    if (mapViewRef) {
-      mapViewRef.current.fitToElements(true)
-    }
     drawMarkers(results)
+    fitMapToMarkers()
     setIsLoading(false)
   }
 
   const onClearSearch = async() => {
     setSearch('')
     await getWells()
-    if (mapViewRef) {
-      mapViewRef.current.fitToElements(true)
-    }
+    fitMapToMarkers()
   }
 
   const showError = (errorMessage) => {
