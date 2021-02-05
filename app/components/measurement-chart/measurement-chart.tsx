@@ -130,13 +130,13 @@ export function MeasurementChart(props: MeasurementChartProps) {
           }
           }>
           {
-            Object.keys(chartUnits).length > 0
+            Object.keys(chartUnits).length > 0 && typeof chartUnits[selectedParameter] !== 'undefined'
               ? chartUnits[selectedParameter].map(r => <Picker.Item key={ r } label={ r } value={ r } />)
               : <Picker.Item key="" label="" value=""></Picker.Item>
           }
         </Picker>
       </View>
-      { Object.keys(chartData).length > 0 ? <LineChart
+      { Object.keys(chartData).length > 0 && typeof chartData[`${selectedParameter} (${selectedUnit})`] !== 'undefined' ? <LineChart
         key={ `${selectedParameter} (${selectedUnit})` }
         style={ styles.chart }
         data={{
