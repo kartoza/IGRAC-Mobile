@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import Well, { MeasurementType, Measurement } from "./well"
-import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField, createNewWell, clearTemporaryNewWells, getWellsByField } from "./well.store"
+import { getWellByField, loadWells, saveWells, updateWellMeasurement, saveWellByField, createNewWell, clearTemporaryNewWells, getWellsByField, removeWellsByField } from "./well.store"
 
 const minimizedData = {
   id: "1",
@@ -106,4 +106,17 @@ it("clears temporary well", async () => {
   // Check the new wells
   const newWells2 = await getWellsByField('new_data', true)
   expect(newWells2.length).toBe(0)
+})
+
+it("removes wells by field", async () => {
+  const wells = await loadWells()
+  wells.push(new Well({ pk: -1, latitude: 0, longitude: 0, new_data: false }))
+  wells.push(new Well({ pk: -3, latitude: 0, longitude: 0, new_data: false }))
+  await saveWells(wells)
+  const wellsWithoutCoordinate = await getWellsByField('latitude', 0)
+  expect(wellsWithoutCoordinate.length).toBe(2)
+  const deleted = await removeWellsByField('latitude', 0)
+  expect(deleted).toBe(true)
+  const wellsWithoutCoordinate2 = await getWellsByField('latitude', 0)
+  expect(wellsWithoutCoordinate2.length).toBe(0)
 })
