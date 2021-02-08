@@ -204,6 +204,18 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     })
   }
 
+  const addNewRecordMode = async () => {
+    setIsAddRecord(true)
+    if (latitude && longitude) {
+      setNewRecordMarker({
+        coordinate: {
+          latitude: latitude,
+          longitude: longitude
+        }
+      })
+    }
+  }
+
   const fitMapToMarkers = () => {
     delay(300).then(() => {
       if (mapViewRef) {
@@ -444,7 +456,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
               color="rgb(196, 196, 196)"
             ></Icon>
           }
-          onPress={ () => setIsAddRecord(true) }
+          onPress={ () => addNewRecordMode() }
           buttonStyle={ styles.USER_BUTTON }
           containerStyle={ styles.USER_BUTTON_CONTAINER }
           TouchableComponent={TouchableWithoutFeedback}
