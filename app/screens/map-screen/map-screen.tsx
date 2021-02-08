@@ -13,7 +13,7 @@ import { delay } from "../../utils/delay"
 import NetInfo from "@react-native-community/netinfo"
 import * as Progress from 'react-native-progress'
 import { Api } from "../../services/api/api"
-import { clearTemporaryNewWells, createNewWell, getWellsByField, loadWells, saveWells } from "../../models/well/well.store"
+import { clearTemporaryNewWells, createNewWell, getWellsByField, loadWells, saveWells, removeWellsByField } from "../../models/well/well.store"
 import { saveTerms } from "../../models/well/term.store"
 import Well from "../../models/well/well"
 import { WellStatusBadge } from "../../components/well/well-status-badge"
@@ -194,6 +194,32 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     selectedWell,
     refreshMap
   ])
+
+  const deleteRecord = async (wellPk) => {
+    await Alert.alert(
+      'Deleting Location Data',
+      'Are you sure you want to delete this location?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel'
+        },
+        {
+          text: 'Yes',
+          onPress: async () => {
+            const deleted = await removeWellsByField('pk', wellPk)
+            if (deleted) {
+              await getWells()
+              const currentUnsyncedData = await getUnsynced()
+              setUnsyncedData(currentUnsyncedData)
+            }
+          }
+        }
+      ],
+      { cancelable: false }
+    )
+  }
 
   const addNewRecord = async () => {
     const newWell = await createNewWell(newRecordMarker.coordinate.latitude, newRecordMarker.coordinate.longitude)
@@ -403,15 +429,26 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
             <View style={ styles.MID_BOTTOM_CONTENTS }>
               <WellStatusBadge well={selectedWell} containerStyle={{ position: 'absolute', top: 10, left: 10 }}></WellStatusBadge>
               <Text style={ styles.MID_BOTTOM_TEXT }>{ selectedWell.id } </Text>
-              <Button
-                title="View Record"
-                type="outline"
-                raised
-                buttonStyle={ styles.MID_BOTTOM_BUTTON }
-                titleStyle={{ color: "#ffffff" }}
-                containerStyle={{ width: "60%" }}
-                onPress={ () => { viewRecord() }}
-              />
+              <View style={{ flexDirection: 'row' }}>
+                <Button
+                  title="View Record"
+                  type="outline"
+                  raised
+                  buttonStyle={ styles.MID_BOTTOM_BUTTON }
+                  titleStyle={{ color: "#ffffff" }}
+                  containerStyle={{ width: "40%" }}
+                  onPress={ () => { viewRecord() }}
+                />
+                { selectedWell.new_data ? <Button
+                  title="Delete"
+                  type="outline"
+                  raised
+                  buttonStyle={[styles.MID_BOTTOM_BUTTON, { backgroundColor: "rgb(234, 53, 53)" }] }
+                  titleStyle={{ color: "#ffffff" }}
+                  containerStyle={{ width: "40%", marginLeft: 10 }}
+                  onPress={ () => { deleteRecord(selectedWell.pk) }}
+                /> : null }
+              </View>
             </View>
           </View>
         ) : <View></View>}
