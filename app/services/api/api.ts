@@ -115,12 +115,11 @@ export class Api {
     const limit = LIMIT ? `limit=${LIMIT}` : ''
     let userCoordinate = ""
     if (latitude && longitude) {
-      userCoordinate = `${latitude}&lon=${longitude}`
+      userCoordinate = `lat=${latitude}&lon=${longitude}`
     }
     const response: ApiResponse<any> = await this.apisauce.get(
       `/groundwater/api/well/minimized?${userCoordinate}&${limit}`
     )
-
     // the typical ways to die when calling an api
     if (!response.ok) {
       const problem = getGeneralApiProblem(response)

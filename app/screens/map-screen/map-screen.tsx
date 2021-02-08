@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createRef, useCallback } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase, useFocusEffect } from "@react-navigation/native"
-import { SearchBar, Button, Icon, Badge } from 'react-native-elements'
+import { SearchBar, Button, Icon, Badge, Overlay } from 'react-native-elements'
 import { PERMISSIONS, request } from "react-native-permissions"
 import { View, Text, ActivityIndicator, Modal, Platform, Alert } from "react-native"
 import Geolocation from '@react-native-community/geolocation'
@@ -17,6 +17,8 @@ import { clearTemporaryNewWells, createNewWell, getWellsByField, loadWells, save
 import { saveTerms } from "../../models/well/term.store"
 import Well from "../../models/well/well"
 import { WellStatusBadge } from "../../components/well/well-status-badge"
+import { OverlayMenu } from "../map-screen/overlay-menu"
+import { load } from "../../utils/storage"
 
 const mapViewRef = createRef()
 let SUBS = null
@@ -41,6 +43,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   const [syncProgress, setSyncProgress] = useState(0)
   const [latitude, setLatitude] = useState(null)
   const [longitude, setLongitude] = useState(null)
+  const [overlayVisible, setOverlayVisible] = useState(false)
 
   const drawMarkers = (data) => {
     const _markers = []
@@ -61,8 +64,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const getWells = async(_latitude?, _longitude?) => {
     await clearTemporaryNewWells()
-    let wells = await loadWells()
-    if (wells.length === 0) {
+    let _wells = await loadWells()
+    if (_wells.length === 0) {
       const userLatitude = _latitude || latitude
       const userLongitude = _longitude || longitude
       const api = new Api()
@@ -72,16 +75,16 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         userLongitude
       )
       if (apiResult.kind === "ok") {
-        wells = apiResult.wells
+        _wells = apiResult.wells
         await saveTerms(apiResult.terms)
       }
-      await saveWells(wells)
+      await saveWells(_wells)
     }
-    if (wells) {
+    if (_wells) {
       setNewRecordMarker(null)
       setIsAddRecord(false)
-      setWells(wells)
-      drawMarkers(wells)
+      setWells(_wells)
+      drawMarkers(_wells)
       setIsViewRecord(false)
       setIsLoading(false)
     }
@@ -99,6 +102,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         setSearch("")
       }
       reloadMap()
+      setOverlayVisible(false)
     }, [])
   )
 
@@ -144,8 +148,8 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
     await Geolocation.getCurrentPosition(
       async (position) => {
         if (mapViewRef) {
-          await setLatitude(position.coords.latitude)
-          await setLongitude(position.coords.longitude)
+          setLatitude(position.coords.latitude)
+          setLongitude(position.coords.longitude)
           mapViewRef.current.animateCamera({
             center: {
               latitude: position.coords.latitude,
@@ -339,6 +343,10 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   useEffect(() => {
     ;(async () => {
+      const uuid = await load("uuid")
+      if (!uuid) {
+        props.navigation.pop()
+      }
       await getWells()
       delay(500).then(() => requestLocation())
     })()
@@ -352,6 +360,9 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   return (
     <View style = { styles.CONTAINER }>
+
+      <OverlayMenu visible={overlayVisible} navigation={props.navigation}></OverlayMenu>
+
       <View style={ styles.SEARCH_BAR_CONTAINER }>
         <SearchBar
           placeholder="Search"
@@ -362,7 +373,21 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
           onSubmitEditing={ submitSearch }
           value={ search }
           showLoading={ isLoading }
+          containerStyle={{ width: "85%"}}
         />
+        <Button
+          containerStyle={{ backgroundColor: "rgb(225, 232, 238)", width: "15%", justifyContent: "center"}}
+          type="clear"
+          raised
+          onPress={ () => { setOverlayVisible(false); delay(100).then(() => setOverlayVisible(true)) } }
+          icon={
+            <Icon
+              name="user-circle-o"
+              type="font-awesome"
+              size={35}
+              color="rgb(138, 151, 161)"
+            ></Icon>
+          }></Button>
       </View>
       <View style={ styles.MAP_VIEW_CONTAINER }>
         <MapView
