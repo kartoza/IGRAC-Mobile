@@ -33,14 +33,14 @@ export const LoginScreenPage: React.FunctionComponent<LoginScreenProps> = props 
     const formData = new FormData()
     formData.append('username', username)
     formData.append('password', password)
-    console.log(loginUrl)
     Axios.post(
       `${loginUrl}`,
       formData
     ).then(async response => {
-      const uuid = response.data
-      if (uuid) {
-        await save('uuid', uuid)
+      const responseData = response.data
+      if (responseData) {
+        await save('uuid', responseData.token)
+        await save('user', responseData.user)
         goToMapScreen()
       }
       setSpinnerVisibility(false)
