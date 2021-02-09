@@ -183,7 +183,7 @@ export const MeasurementFormScreen: React.FunctionComponent<MeasurementFormScree
                   }
                 </Picker>
               </View>
-              <Button loading={loading} containerStyle={ styles.SUBMIT_BUTTON } onPress={handleSubmit} title="Submit" />
+              <Button loading={loading} containerStyle={ styles.SUBMIT_BUTTON } onPress={handleSubmit} title="Add" />
               {showDatePicker && (
                 <DateTimePicker
                   testID="dateTimePicker"
