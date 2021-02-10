@@ -134,7 +134,9 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
       updatedWellData.id &&
       updatedWellData.name &&
       updatedWellData.longitude &&
-      updatedWellData.latitude
+      updatedWellData.latitude &&
+      updatedWellData.feature_type &&
+      updatedWellData.purpose
     )
   }
 
@@ -259,7 +261,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 onChange={ (val) => formOnChange(val, "id") }></FormInput>
               <FormInput editable={ editMode } key="name" required value={ wellData.name } title="Name" onChange={ val => formOnChange(val, "name")}></FormInput>
               <FormInput editable={ editMode } key="feature_type" required value={ wellData.feature_type } options={ terms.termfeaturetype } title="Feature type" onChange={ val => formOnChange(val, "feature_type")}></FormInput>
-              <FormInput editable={ editMode } key="purpose" value={ wellData.purpose } options={ terms.termwellpurpose } title="Purpose" onChange={ val => formOnChange(val, "purpose")}></FormInput>
+              <FormInput editable={ editMode } key="purpose" required value={ wellData.purpose } options={ terms.termwellpurpose } title="Purpose" onChange={ val => formOnChange(val, "purpose")}></FormInput>
               <FormInput editable={ editMode } key="status" value={ wellData.status } options={ terms.termwellstatus } title="Status" onChange={ val => formOnChange(val, "status")}></FormInput>
               <FormInput editable={ editMode } key="description" value={ wellData.description } title="Description" multiline onChange={ val => formOnChange(val, "description")}></FormInput>
 
