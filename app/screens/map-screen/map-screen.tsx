@@ -59,6 +59,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         new_data: data.new_data
       })
     })
+    _markers.sort((a, b) => (a.new_data) ? 1 : ((b.new_data) ? -1 : 0))
     setMarkers(_markers)
   }
 
