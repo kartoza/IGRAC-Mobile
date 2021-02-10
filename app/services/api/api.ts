@@ -187,9 +187,9 @@ export class Api {
     }
     const getTermId = (termValue, termKey) => {
       let id = ""
-      // if value undefined, then return the first value
+      // if value undefined, then return empty
       if (typeof termValue === "undefined") {
-        return Object.keys(terms[termKey][0])[0]
+        return ""
       }
       terms[termKey].forEach(_term => {
         if (_term[Object.keys(_term)[0]] === termValue) {
@@ -207,7 +207,11 @@ export class Api {
         }
         return ""
       }
-      return unitValue
+      if (typeof unitValue !== "undefined") {
+        return unitValue
+      } else {
+        return ""
+      }
     }
     postData.general_information = {
       original_id: well.id,
@@ -218,9 +222,9 @@ export class Api {
       description: well.description || "",
       latitude: well.latitude,
       longitude: well.longitude,
-      ground_surface_elevation_value: well.ground_surface_elevation,
+      ground_surface_elevation_value: well.ground_surface_elevation || "",
       ground_surface_elevation_unit: "m",
-      top_borehole_elevation_value: well.top_borehole_elevation,
+      top_borehole_elevation_value: well.top_borehole_elevation || "",
       top_borehole_elevation_unit: "m",
       country: well.country || "",
       address: well.address || ""
@@ -231,9 +235,9 @@ export class Api {
     postData.drilling = {
       year_of_drilling: well.construction_year || "",
       drilling_method: getTermId(well.excavation_method, 'termdrillingmethod') || "",
-      driller: well.contractor,
-      cause_of_failure: well.cause_of_failure,
-      successful: well.successful
+      driller: well.contractor || "",
+      cause_of_failure: well.cause_of_failure || "",
+      successful: well.successful || ""
     }
     postData.geology = {
       total_depth_value: well.total_depth || "",
@@ -310,6 +314,8 @@ export class Api {
     )
 
     // the typical ways to die when calling an api
+    console.log(postData)
+    console.log(url)
     if (!response.ok) {
       const problem = getGeneralApiProblem(response)
       if (problem) return problem
