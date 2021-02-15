@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, createRef } from "react"
 import { NativeStackNavigationProp } from "react-native-screens/native-stack"
 import { ParamListBase } from "@react-navigation/native"
 import { Button, Header } from 'react-native-elements'
@@ -13,9 +13,11 @@ import { MeasurementChart } from "../../components/measurement-chart/measurement
 import { FormInput } from "../../components/form-input/form-input"
 import { styles as mapStyles } from "../../screens/map-screen/styles"
 import { WellStatusBadge } from "../../components/well/well-status-badge"
-import Geolocation from "@react-native-community/geolocation"
+import Geolocation from 'react-native-geolocation-service'
+import MapView, { Marker } from "react-native-maps"
 
 const countryList = require("country-list")
+const mapViewRef = createRef()
 
 export interface FormScreenProps {
   navigation: NativeStackNavigationProp<ParamListBase>,
@@ -29,6 +31,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const [updated, setUpdated] = useState(false)
   const [editMode, setEditMode] = useState(route.params.editMode !== undefined ? route.params.editMode : false)
   const [loading, setLoading] = useState(true)
+  const [updateLocationMap, setUpdateLoationMap] = useState(false)
   const [terms, setTerms] = useState({
     organisation: [],
     units: {}
@@ -195,6 +198,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   ])
 
   const setCoordinateToCurrentLocation = async () => {
+    setLoading(true)
     await Geolocation.getCurrentPosition(
       async (position) => {
         if (updatedWellData.latitude !== position.coords.latitude || updatedWellData.longitude !== position.coords.longitude) {
@@ -209,6 +213,15 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             longitude: position.coords.longitude
           })
           setUpdated(true)
+          setLoading(false)
+          if (mapViewRef.current) {
+            mapViewRef.current.animateCamera({
+              center: {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              }
+            })
+          }
         }
       },
       error => {
@@ -225,10 +238,10 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     <View style={{ height: "100%" }}>
       <Header
         placement="center"
-        leftComponent={{ icon: "chevron-left", size: 30, color: "#fff", onPress: () => goToMapScreen() }}
+        leftComponent={{ icon: "chevron-left", size: 35, color: "#fff", onPress: () => goToMapScreen() }}
         centerComponent={{ text: editMode ? "Edit Record" : "View Record", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
-        rightComponent={ wellData.editable && !editMode ? { icon: "mode-edit", size: 20, color: "#fff", onPress: () => editRecord() } : {}}
+        rightComponent={ wellData.editable && !editMode ? { icon: "mode-edit", size: 35, color: "#fff", onPress: () => editRecord() } : {}}
       />
       { updated && terms.units ? <View style={[mapStyles.BOTTOM_VIEW, { zIndex: 99 } ]}>
         <Button
@@ -270,10 +283,42 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
               <FormInput editable={ wellData.new_data ? editMode : false } key="longitude" value={ wellData.longitude } numeric required title="Longitude" onChange={ val => formOnChange(parseFloat(val), "longitude")}></FormInput>
 
               { editMode
-                ? <Button
-                  title="Set to current location"
-                  containerStyle={{ marginTop: 10 }}
-                  onPress={ () => setCoordinateToCurrentLocation() }></Button> : null }
+                ? <View>
+                  <Button
+                    title="Set to current location"
+                    containerStyle={{ marginTop: 10 }}
+                    onPress={ () => setCoordinateToCurrentLocation() }></Button>
+                  <Button
+                    title={ updateLocationMap ? "Close map" : "Update location on map"}
+                    containerStyle={{ marginTop: 10 }}
+                    onPress={ () => setUpdateLoationMap(!updateLocationMap) }></Button></View> : null }
+              { (updateLocationMap || !editMode) && wellData.latitude && wellData.longitude
+                ? <View style={{ height: 200, marginTop: 20 }}>
+                  <MapView
+                    pitchEnabled={editMode} rotateEnabled={editMode} zoomEnabled={editMode} scrollEnabled={editMode}
+                    ref={mapViewRef}
+                    initialRegion={{
+                      latitude: parseFloat(wellData.latitude),
+                      longitude: parseFloat(wellData.longitude),
+                      latitudeDelta: 0.02,
+                      longitudeDelta: 0.02,
+                    }}
+                    style={{ height: "100%", marginVertical: 0 }}
+                    showsUserLocation = {true}
+                    moveOnMarkerPress = {true}
+                    onPress={(e) => {
+                      if (!editMode) return false
+                      const coordinate = e.nativeEvent.coordinate
+                      setUpdated(true)
+                      setWellData({ wellData, ...{ latitude: coordinate.latitude, longitude: coordinate.longitude } })
+                    }}>
+                    <Marker
+                      key={wellData.pk}
+                      coordinate={{ latitude: parseFloat(wellData.latitude), longitude: parseFloat(wellData.longitude) }}
+                      title={wellData.id}
+                    />
+                  </MapView>
+                </View> : null }
 
               <FormInput editable={ editMode } key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
               <FormInput editable={ editMode } key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>

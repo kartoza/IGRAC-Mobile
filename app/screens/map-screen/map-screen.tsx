@@ -4,7 +4,7 @@ import { ParamListBase, useFocusEffect } from "@react-navigation/native"
 import { SearchBar, Button, Icon, Badge, Overlay } from 'react-native-elements'
 import { PERMISSIONS, request } from "react-native-permissions"
 import { View, Text, ActivityIndicator, Modal, Platform, Alert } from "react-native"
-import Geolocation from '@react-native-community/geolocation'
+import Geolocation from 'react-native-geolocation-service'
 import MapView, { Marker } from "react-native-maps"
 import { styles } from "../map-screen/styles"
 import { TouchableWithoutFeedback } from "react-native-gesture-handler"
@@ -147,7 +147,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
 
   const watchLocation = async () => {
     await Geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         if (mapViewRef) {
           setLatitude(position.coords.latitude)
           setLongitude(position.coords.longitude)
@@ -236,6 +236,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
   }
 
   const addNewRecordMode = async () => {
+    watchLocation()
     setIsAddRecord(true)
     if (latitude && longitude) {
       setNewRecordMarker({
@@ -483,7 +484,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         ? (
           <View style={styles.MID_BOTTOM_CONTAINER}>
             <View style={styles.MID_BOTTOM_CONTENTS}>
-              <Text style={styles.MID_BOTTOM_TEXT}>Select location on the map</Text>
+              <Text style={styles.MID_BOTTOM_TEXT}>Change location on the map</Text>
               <View style={{ flexDirection: "row"}}>
                 <Button
                   title="Cancel"

@@ -31,7 +31,7 @@ const SEARCH_BAR_CONTAINER: ViewStyle = {
   flexDirection: "row"
 }
 const MAP_VIEW_CONTAINER: ViewStyle = {
-  height: Dimensions.get('window').height - ((Platform.OS === "ios") ? 100 : 80) - 65,
+  height: Dimensions.get('window').height - ((Platform.OS === "ios") ? 100 : 60) - 65,
 }
 const MAP: ViewStyle = {
   height: "100%",
