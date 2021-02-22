@@ -484,7 +484,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         ? (
           <View style={styles.MID_BOTTOM_CONTAINER}>
             <View style={styles.MID_BOTTOM_CONTENTS}>
-              <Text style={styles.MID_BOTTOM_TEXT}>Change location on the map</Text>
+              <Text style={styles.MID_BOTTOM_TEXT}>Add new location</Text>
               <View style={{ flexDirection: "row"}}>
                 <Button
                   title="Cancel"
