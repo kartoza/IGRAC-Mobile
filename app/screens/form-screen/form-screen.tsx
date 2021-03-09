@@ -32,6 +32,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const [editMode, setEditMode] = useState(route.params.editMode !== undefined ? route.params.editMode : false)
   const [loading, setLoading] = useState(true)
   const [updateLocationMap, setUpdateLoationMap] = useState(false)
+  const [editRecordTitle, setEditRecordTitle] = useState("...")
   const [terms, setTerms] = useState({
     organisation: [],
     units: {}
@@ -54,6 +55,12 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     const _wellData = await getWellByField("pk", route.params.wellPk)
     if (!_wellData) {
       goToMapScreen()
+    }
+    if (_wellData.pk > 0) {
+      setEditRecordTitle("Edit Record")
+    } else {
+      setEditRecordTitle("Add Record")
+      setUpdated(true)
     }
     setWellData(_wellData)
     setMeasurementData({
@@ -239,7 +246,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
       <Header
         placement="center"
         leftComponent={{ icon: "chevron-left", size: 35, color: "#fff", onPress: () => goToMapScreen() }}
-        centerComponent={{ text: editMode ? "Edit Record" : "View Record", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
+        centerComponent={{ text: editMode ? editRecordTitle : "View Record", style: { fontSize: 18, color: "#fff", fontWeight: "bold" } }}
         containerStyle={ styles.HEADER_CONTAINER }
         rightComponent={ wellData.editable && !editMode ? { icon: "mode-edit", size: 35, color: "#fff", onPress: () => editRecord() } : {}}
       />

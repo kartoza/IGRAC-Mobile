@@ -157,9 +157,6 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
               longitude: position.coords.longitude
             }
           })
-          if (wells.length === 0) {
-            getWells(position.coords.latitude, position.coords.longitude)
-          }
         }
       },
       error => {
