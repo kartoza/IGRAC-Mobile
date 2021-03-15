@@ -1,5 +1,4 @@
 import { Picker } from "@react-native-picker/picker"
-import { any } from "ramda"
 import React, { useState, useEffect } from "react"
 import { View, Text, TextInput } from "react-native"
 import { styles } from '../../screens/form-screen/styles'

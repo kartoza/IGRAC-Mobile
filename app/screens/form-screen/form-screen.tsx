@@ -56,11 +56,11 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     if (!_wellData) {
       goToMapScreen()
     }
-    if (_wellData.pk > 0) {
-      setEditRecordTitle("Edit Record")
-    } else {
+    if (_wellData.new_data && typeof _wellData.id === "undefined") {
       setEditRecordTitle("Add Record")
       setUpdated(true)
+    } else {
+      setEditRecordTitle("Edit Record")
     }
     setWellData(_wellData)
     setMeasurementData({
@@ -220,7 +220,6 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             longitude: position.coords.longitude
           })
           setUpdated(true)
-          setLoading(false)
           if (mapViewRef.current) {
             mapViewRef.current.animateCamera({
               center: {
@@ -230,6 +229,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
             })
           }
         }
+        setLoading(false)
       },
       error => {
         Alert.alert(
@@ -317,7 +317,8 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                       if (!editMode) return false
                       const coordinate = e.nativeEvent.coordinate
                       setUpdated(true)
-                      setWellData({ wellData, ...{ latitude: coordinate.latitude, longitude: coordinate.longitude } })
+                      setWellData({ ...wellData, ...{ latitude: coordinate.latitude, longitude: coordinate.longitude } })
+                      setUpdatedWellData({ ...updatedWellData, ...{ latitude: coordinate.latitude, longitude: coordinate.longitude } })
                     }}>
                     <Marker
                       key={wellData.pk}
@@ -327,14 +328,14 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                   </MapView>
                 </View> : null }
 
-              <FormInput editable={ editMode } key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
-              <FormInput editable={ editMode } key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
+              <FormInput editable={ editMode } key="ground_surface_elevation" value={ wellData.ground_surface_elevation } title="Ground surface elevation" units={ terms.units ? terms.units.length : [] } numeric onChange={ val => formOnChange(val, "ground_surface_elevation")}></FormInput>
+              <FormInput editable={ editMode } key="top_borehole_elevation" value={ wellData.top_borehole_elevation } title="Top borehole elevation" units={ terms.units ? terms.units.length : [] } numeric onChange={ val => formOnChange(val, "top_borehole_elevation")}></FormInput>
               <FormInput editable={ editMode } key="country" value={ wellData.country } title="Country" options={ countryList.getNames() } onChange={ val => formOnChange(val, "country")}></FormInput>
               <FormInput editable={ editMode } key="address" value={ wellData.address } title="Address" multiline onChange={ val => formOnChange(val, "address")}></FormInput>
 
               <Text style={ styles.FORM_HEADER }>DRILLING AND CONSTRUCTION</Text>
               <Text style={ styles.FORM_SUB_HEADER }>For wells and boreholes</Text>
-              <FormInput editable={ editMode } key="total_depth" value={ wellData.total_depth } title="Total depth" units={ terms.units.length } numeric onChange={ val => formOnChange(val, "total_depth")}></FormInput>
+              <FormInput editable={ editMode } key="total_depth" value={ wellData.total_depth } title="Total depth" units={ terms.units ? terms.units.length : [] } numeric onChange={ val => formOnChange(val, "total_depth")}></FormInput>
               <FormInput editable={ editMode } key="total_depth_reference_elevation" value={ wellData.total_depth_reference_elevation } options={ terms.termreferenceelevationtype } title="Total depth reference elevation" onChange={ val => formOnChange(val, "total_depth_reference_elevation")}></FormInput>
               <FormInput editable={ editMode } key="construction_year" value={ wellData.construction_year } title="Construction year" numeric onChange={ val => formOnChange(val, "construction_year")}></FormInput>
               <FormInput editable={ editMode } key="excavation_method" value={ wellData.excavation_method } title="Excavation method" options={ terms.termdrillingmethod } onChange={ val => formOnChange(val, "excavation_method")}></FormInput>
@@ -358,14 +359,14 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 title="Porosity"
                 numeric
                 unitValue={ wellData.porosity_unit }
-                units={ terms.units.Percentage }
+                units={ terms.units ? terms.units.Percentage : [] }
                 onUnitChange={ val => formOnChange(val, "porosity_unit") }
                 onChange={ val => formOnChange(val, "porosity")}></FormInput>
               <FormInput editable={ editMode } key="hydraulic_conductivity"
                 value={ wellData.hydraulic_conductivity }
                 unitValue={ wellData.hydraulic_conductivity_unit }
                 numeric
-                units={ terms.units[wellData.hydraulic_conductivity_unit_key] }
+                units={ terms.units ? terms.units[wellData.hydraulic_conductivity_unit_key] : [] }
                 onUnitChange={ val => formOnChange(val, "hydraulic_conductivity_unit")}
                 title="Hydraulic conductivity"
                 onChange={ val => formOnChange(val, "hydraulic_conductivity")}></FormInput>
@@ -373,7 +374,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 value={ wellData.transmissivity }
                 unitValue={ wellData.transmissivity_unit }
                 numeric
-                units={ terms.units[wellData.transmissivity_unit_key] }
+                units={ terms.units ? terms.units[wellData.transmissivity_unit_key] : [] }
                 onUnitChange={ val => formOnChange(val, "transmissivity_unit") }
                 title="Transmissivity"
                 onChange={ val => formOnChange(val, "transmissivity")}></FormInput>
@@ -383,7 +384,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 value={ wellData.specific_storage }
                 unitValue={ wellData.specific_storage_unit }
                 numeric
-                units={ terms.units[wellData.specific_storage_unit_key] }
+                units={ terms.units ? terms.units[wellData.specific_storage_unit_key] : [] }
                 onUnitChange={ val => formOnChange(val, "specific_storage_unit") }
                 title="Specific storage"
                 onChange={ val => formOnChange(val, "specific_storage")}></FormInput>
@@ -392,7 +393,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 value={ wellData.specific_capacity }
                 unitValue={ wellData.specific_capacity_unit }
                 numeric
-                units={ terms.units[wellData.specific_capacity_unit_key] }
+                units={ terms.units ? terms.units[wellData.specific_capacity_unit_key] : [] }
                 title="Specific capacity"
                 onUnitChange={ val => formOnChange(val, "specific_capacity_unit") }
                 onChange={ val => formOnChange(val, "specific_capacity")}></FormInput>
@@ -401,7 +402,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 unitValue={ wellData.yield_unit }
                 title="Yield"
                 numeric
-                units={ terms.units[wellData.yield_unit_key] }
+                units={ terms.units ? terms.units[wellData.yield_unit_key] : [] }
                 onUnitChange={ val => formOnChange(val, "yield_unit") }
                 onChange={ val => formOnChange(val, "yield")}></FormInput>
               <FormInput editable={ editMode } key="test_type" value={ wellData.test_type } title="Test type" onChange={ val => formOnChange(val, "test_type")}></FormInput>

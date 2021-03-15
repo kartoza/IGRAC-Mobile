@@ -7,6 +7,7 @@ import Well, { MeasurementType } from "../well/well"
 import { Api } from "../../services/api/api"
 import { saveWells, loadWells, getWellsByField, saveWellByField } from "../well/well.store"
 import { API_URL } from "@env"
+import { securedUrl } from "../../utils/url"
 
 export interface SyncData {
   id?: string | number,
@@ -102,8 +103,9 @@ export const pushUnsyncedData = async (unsyncedData: SyncData) => {
   if (isMeasurementData(unsyncedData)) {
     postData[dataType] = [unsyncedData.data]
   }
+  const baseUrl = securedUrl(API_URL)
   await Axios.put(
-    `${API_URL}${unsyncedData.url}`,
+    `${baseUrl}${unsyncedData.url}`,
     JSON.stringify(postData),
     {
       headers: headers
