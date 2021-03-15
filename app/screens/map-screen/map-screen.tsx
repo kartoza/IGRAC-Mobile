@@ -75,6 +75,7 @@ export const MapScreen: React.FunctionComponent<MapScreenProps> = props => {
         userLatitude,
         userLongitude
       )
+      console.log(apiResult)
       if (apiResult.kind === "ok") {
         _wells = apiResult.wells
         await saveTerms(apiResult.terms)

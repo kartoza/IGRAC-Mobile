@@ -7,6 +7,7 @@ import { load } from "../../utils/storage"
 import Well from "../../models/well/well"
 import { loadTerms } from "../../models/well/term.store"
 import { LIMIT } from "@env"
+import { securedUrl } from "../../utils/url"
 
 /**
  * Manages all requests to the API.
@@ -42,7 +43,7 @@ export class Api {
     // construct the apisauce instance
     const uuid = await load("uuid")
     this.apisauce = create({
-      baseURL: this.config.url,
+      baseURL: securedUrl(this.config.url),
       timeout: this.config.timeout,
       headers: {
         Accept: "application/json",

@@ -6,6 +6,7 @@ import LoginScreen from "react-native-login-screen"
 import { save, load } from "../../utils/storage"
 import { API_URL } from "@env"
 import { Alert } from "react-native"
+import { securedUrl } from "../../utils/url"
 
 const defaultImage = require("../../components/wallpaper/igrac.png")
 
@@ -17,7 +18,7 @@ export const LoginScreenPage: React.FunctionComponent<LoginScreenProps> = props 
   const [spinnerVisibility, setSpinnerVisibility] = useState(false)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const loginUrl = `${API_URL}/groundwater/token-auth`
+  const loginUrl = securedUrl(`${API_URL}/groundwater/token-auth`)
 
   const goToMapScreen = React.useMemo(() => () => props.navigation.navigate("map"), [props.navigation])
 
