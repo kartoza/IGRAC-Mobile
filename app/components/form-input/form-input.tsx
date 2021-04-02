@@ -9,13 +9,17 @@ export interface FormInputProps {
   onChange?: any,
   onUnitChange?: any,
   unitValue?: string,
+  checkValue?: any,
   key: string,
   title: string,
   value: string | number,
   numeric?: boolean,
+  maxLength?: number,
   required?: boolean,
   multiline?: boolean,
   editable?: boolean,
+  formRef?: null,
+  errorMessage?: null,
   units?: []
 }
 
@@ -24,6 +28,7 @@ export function FormInput(props: FormInputProps) {
   const [unitValue, setUnitValue] = useState("")
   const [updated, setUpdated] = useState(false)
   const [editable, setEditable] = useState(true)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     ;(async () => {
@@ -38,6 +43,12 @@ export function FormInput(props: FormInputProps) {
       }
     })()
   }, [props.value, props.unitValue])
+
+  useEffect(() => {
+    ;(async () => {
+      setError(props.errorMessage)
+    })()
+  }, [props.errorMessage])
 
   const handleChange = (value, isUnit = false) => {
     let outputValue = null
@@ -64,13 +75,32 @@ export function FormInput(props: FormInputProps) {
       props.onChange(outputValue)
     }
   }
+  const _checkValue = () => {
+    if (props.checkValue) {
+      setError(props.checkValue(inputValue))
+      return
+    }
+    if (inputValue === "" && props.required) {
+      setError("Required value")
+    } else {
+      setError("")
+    }
+  }
   const pickerForm = (options, isUnit = false) => {
     return <View style={[styles.TEXT_INPUT_STYLE, isUnit ? { width: "40%"} : {}] }>
       <Picker
         selectedValue={ isUnit ? unitValue : inputValue }
         style={styles.PICKER_INPUT_STYLE}
         enabled={ editable }
+        ref={props.formRef}
         onValueChange={(itemValue, itemIndex) => {
+          if (props.required) {
+            if (itemValue === "") {
+              setError("Required value")
+            } else {
+              setError("")
+            }
+          }
           handleChange(itemValue, isUnit)
         }}>
         { !isUnit ? <Picker.Item key={ "" } label={ "-------" } value={ "" } /> : null}
@@ -96,16 +126,20 @@ export function FormInput(props: FormInputProps) {
   return (
     <View>
       <Text style={[(props.required ? styles.LABEL_IMPORTANT : styles.LABEL), (updated ? { backgroundColor: "rgba(189, 202, 18, 0.2)"}:{})]}> { props.title }</Text>
+      { error ? <Text style={ styles.ERROR_INPUT }>{ error }</Text> : null }
       <View style={props.units ? styles.MULTIPLE_INPUT_STYLE : styles.TEXT_INPUT_STYLE}>
         { props.options
           ? pickerForm(props.options)
           : <TextInput
+            ref={props.formRef}
             editable={ editable }
+            maxLength={ props.maxLength }
             onChangeText={ (value) => handleChange(value) }
             value={ inputValue }
             style={[styles.TEXT_INPUT_STYLE, (props.multiline ? { height: 100, textAlignVertical: 'top' } : {}), (props.units ? { width : '60%'} : {})]}
             multiline={ props.multiline }
             keyboardType={ props.numeric ? "numeric" : "default" }
+            onBlur={ () => _checkValue() }
           />
         }
         { props.units ? pickerForm(props.units, true) : <View></View>}

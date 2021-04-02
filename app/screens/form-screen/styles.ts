@@ -112,11 +112,18 @@ const LOADING: ViewStyle = {
   zIndex: 999999,
 }
 
+const ERROR_INPUT: TextStyle = {
+  color: "red",
+  fontSize: 12,
+  paddingLeft: 3
+}
+
 export const styles = StyleSheet.create({
   CHART_CONTAINER,
   CHART_LABEL,
   CONTAINER,
   EMPTY_CHART_CONTAINER,
+  ERROR_INPUT,
   FORM_HEADER,
   FORM_SUB_HEADER,
   HEADER_CONTAINER,
