@@ -43,6 +43,7 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
   const [latitudeError, setLatitudeError] = useState("")
   const [longitudeError, setLongitudeError] = useState("")
   const [porosityError, setPorosityError] = useState("")
+  const [specificYieldError, setSpecificYieldError] = useState("")
   const [constructionYearError, setConstructionYearError] = useState("")
 
   const [terms, setTerms] = useState({
@@ -158,6 +159,13 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     return ""
   }
 
+  const checkSpecificYieldInput = (val) => {
+    if (val < 0 || val > 1) {
+      return "Values range from 0 to 1"
+    }
+    return ""
+  }
+
   const checkRequiredFields = () => {
     const errorMessage = "Required value"
     let error = false
@@ -213,8 +221,13 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
     const requiredFieldsOk = checkRequiredFields()
     error = !requiredFieldsOk
     const porosityCheck = checkPercentInput(updatedWellData.porosity)
+    const specificYieldCheck = checkSpecificYieldInput(updatedWellData.specific_yield)
     if (porosityCheck) {
       setPorosityError(porosityCheck)
+      error = true
+    }
+    if (specificYieldCheck) {
+      setSpecificYieldError(specificYieldCheck)
       error = true
     }
     // Check long and lat
@@ -494,7 +507,14 @@ export const FormScreen: React.FunctionComponent<FormScreenProps> = props => {
                 onUnitChange={ val => formOnChange(val, "specific_storage_unit") }
                 title="Specific storage"
                 onChange={ val => formOnChange(val, "specific_storage")}></FormInput>
-              <FormInput editable={ editMode } key="specific_yield" maxLength={10} value={ wellData.specific_yield } title="Specific yield" onChange={ val => formOnChange(val, "specific_yield")}></FormInput>
+              <FormInput editable={ editMode }
+                key="specific_yield"
+                maxLength={10}
+                numeric
+                errorMessage={ specificYieldError }
+                checkValue={ val => checkSpecificYieldInput(val)}
+                value={ wellData.specific_yield }
+                title="Specific yield" onChange={ val => formOnChange(val, "specific_yield")}></FormInput>
               <FormInput editable={ editMode } key="specific_capacity"
                 value={ wellData.specific_capacity }
                 maxLength={10}
